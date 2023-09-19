@@ -1,0 +1,184 @@
+# Assess scenarios raptr
+# (1) Maximum targets
+# (2) pairwise distance between PU selection frequencies
+# (3) Targets met by solutions found with different scenarios
+# (4) Conservation cost
+
+rm(list=ls())
+
+species <- "Mullus"
+
+library(tidyverse)
+library(sf)
+library(ade4)
+library(vegan)
+library(raptr)
+
+load(paste0("Results_raptr_",species,".RData"))
+
+
+#####################################################################################
+# (1) Maximum targets
+#####################################################################################
+maximum_targets_list <- lapply(problems, maximum.targets) 
+maximum_targets <- bind_rows(maximum_targets_list, .id="problem")
+maximum_targets$problem <- factor(maximum_targets$problem,
+                                  levels=names(problems))
+# Plot
+png(paste0("Maximum_target_raptr_",species,".png"),width=7.5,height=7.5,units="cm",res=300)    
+theme_set(theme_classic())
+ggplot(maximum_targets,aes(x=problem,y=proportion)) +
+    geom_boxplot() +
+    theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0.5)) +
+    ggtitle(paste0(paste("raptr",species)))
+dev.off()
+
+
+#####################################################################################
+# (2) pairwise distance between PU selection frequencies
+#####################################################################################
+# i) I calculate a selection frequency for each of the two scenarios
+# ii) I use the 2 selection frequencies to calculate a Jaccard distance
+# iii) I assess significance by permuting solution vectors between the 2 scenarios 
+jaccard_distance <- pvalue <- array(NA,dim=c(length(results),length(results)))
+dimnames(jaccard_distance) <- dimnames(pvalue) <- list("1" = names(results), "2" = names(results))
+
+par(mar=c(1,1,4,1),mfrow=c(4,4))
+i.res <- 1; j.res <- 2
+for (i.res in 1 : (length(results)-1)) {
+    for (j.res in (i.res+1) : length(results)) {
+        cat(i.res,j.res,"\n"); flush.console()
+        twogroups <- cbind(
+            results[[i.res]]@results@selections %>% t(),
+            results[[j.res]]@results@selections %>% t()
+        )
+        selection_frequency_1 <- rowSums(twogroups[,1:100]) / 100
+        selection_frequency_2 <- rowSums(twogroups[,101:200]) / 100
+        vegdist(rbind(selection_frequency_1,selection_frequency_2),method="jaccard") %>% as.numeric() -> distance_observed
+        # Permute columns
+        num_perm <- 1000
+        distance_permuted <- rep(NA,num_perm)
+        for (i.perm in 1 : num_perm) {
+            if (i.perm %% 100 == 0) {
+                cat(i.perm,"of",num_perm,"\n")
+                flush.console()
+            }
+            twogroups_permuted <- twogroups[,sample(200)]
+            selection_frequency_1 <- rowSums(twogroups_permuted[,1:100]) / 100
+            selection_frequency_2 <- rowSums(twogroups_permuted[,101:200]) / 100
+            vegdist(rbind(selection_frequency_1,selection_frequency_2),method="jaccard") %>% as.numeric() -> distance_permuted[i.perm]
+        }
+        hist(distance_permuted,
+             main = names(results)[c(i.res,j.res)],
+             xlim=c(min(distance_permuted),
+                    max((distance_observed+1), max(distance_permuted))))
+        abline(v=distance_observed,col="red")
+        jaccard_distance[i.res,j.res] <- distance_observed
+        pvalue[i.res,j.res] <- 1 - (ecdf(distance_permuted)(distance_observed))
+    }
+}
+save(jaccard_distance, pvalue, file=paste0("Jaccard_distance_raptr_",species,".RData"))
+# Plot a tree showing distances between solutions
+load(paste0("Jaccard_distance_raptr_",species,".RData"))
+hc <- hclust(as.dist(t(jaccard_distance)))
+png(paste0("hclust_raptr_",species,".png"),width=9,height=15,units="cm",res=300)
+par(mar=c(1,4,2,1))
+plot(hc,main=paste("raptr",species),xlab="",sub="")
+dev.off()
+
+
+#####################################################################################
+# (3) Targets met by solutions found with different scenarios
+#####################################################################################
+# For each scenario, I analyze whether the other scenarios meet its target, by calculating the space held and distance to maximum targets
+space_held <- distance_to_maximum <- array(NA,c(length(problems),length(results),100))
+i.prob <- j.prob <- 1
+for (i.prob in 1 : length(problems)) {
+    maximum_targets_problem <- maximum.targets(results[[i.prob]])$proportion
+    for (j.prob in 1 : length(results)) {
+        for (i.sol in 1 : 100) {
+            if (i.sol %% 25 == 0) {
+                cat(i.prob,j.prob,i.sol,"\n");
+                flush.console()
+            }
+            if(i.prob == j.prob) {
+                space_held_solution <- space.held(results[[i.prob]], y=i.sol,space=NULL) %>% as.vector()
+            } else {
+                selections <- which(results[[j.prob]]@results@selections[i.sol,]==1)
+                res_updated <- update(results[[i.prob]], b = selections)
+                space_held_solution <- space.held(res_updated, y=1,space=NULL) %>% as.vector()
+            }
+            space_held[i.prob,j.prob,i.sol] <- mean(space_held_solution)
+            distance_to_maximum[i.prob,j.prob,i.sol] <- mean(maximum_targets_problem - space_held_solution)
+        }
+    }
+}
+save(space_held,distance_to_maximum,file=paste0("Shortfall_raptr_",species,".RData"))
+load(paste0("Shortfall_raptr_",species,".RData"))
+# Reshaping space_held and distance_to_maximum into a dataframe
+space_held_list <- distance_to_maximum_list <- list()
+for(i.prob in 1 : 12) {
+    space_held_list[[i.prob]] <- 
+        space_held[i.prob,,] %>%
+        as.data.frame() %>%
+        mutate(scenario=factor(names(results),levels=names(results))) %>% 
+        pivot_longer(cols=1:100) %>%
+        mutate(space_held = value, problem = names(problems)[i.prob]) %>%
+        select(-value)
+    distance_to_maximum_list[[i.prob]] <-
+        distance_to_maximum[i.prob,,] %>%
+        as.data.frame() %>%
+        mutate(scenario=factor(names(results),levels=names(results))) %>%
+        pivot_longer(cols=1:100) %>%
+        mutate(distance_to_maximum = value, problem = names(problems)[i.prob]) %>%
+        select(-value)
+}
+space_held <- bind_rows(space_held_list)
+space_held$problem <- factor(space_held$problem,
+                            levels=names(problems))
+rm(space_held_list)
+distance_to_maximum <- bind_rows(distance_to_maximum_list)
+distance_to_maximum$problem <- factor(distance_to_maximum$problem,
+                                      levels=names(problems))
+rm(distance_to_maximum_list)
+# Plot
+png(paste0("Space_held_raptr_",species,".png"),width=15,height=20,units="cm",res=300)    
+theme_set(theme_classic())
+ggplot(space_held,aes(x=scenario,y=space_held)) +
+    geom_boxplot() +
+    facet_wrap(vars(problem),ncol=3) +
+    theme(axis.text.x = element_text(angle = 90))
+dev.off()
+png(paste0("Distance_to_maximum_raptr_",species,".png"),width=15,height=20,units="cm",res=300)    
+theme_set(theme_classic())
+ggplot(distance_to_maximum,aes(x=scenario,y=distance_to_maximum)) +
+    geom_boxplot() +
+    facet_wrap(vars(problem),ncol=3) +
+    theme(axis.text.x = element_text(angle = 90))
+dev.off()
+
+
+#####################################################################################
+# (4) Conservation cost
+#####################################################################################
+cost_list <- list()
+for (i.prob in 1 : length(results)) {
+    cost_list[[i.prob]] <- results[[i.prob]]@results@summary$Cost
+}
+names(cost_list) <- names(results)
+bind_cols(cost_list) %>%
+    mutate(solution = c(1:100)) %>%
+    pivot_longer(col=names(problems),
+                 names_to="problem",
+                 values_to="cost",
+                 cols_vary="slowest") ->
+    cost
+cost$problem <- factor(cost$problem,
+                       levels=names(problems))
+theme_set(theme_classic())
+png(paste0("Cost_raptr_",species,".png"),width=7.5,height=7.5,units="cm",res=300)  
+ggplot(cost,aes(x=problem,y=cost)) +
+    geom_boxplot() +
+    theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0.5)) +
+    ggtitle(paste0(paste("raptr",species)))
+dev.off()
