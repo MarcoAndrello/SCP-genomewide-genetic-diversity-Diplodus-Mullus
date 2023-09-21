@@ -5,7 +5,7 @@
 
 rm(list=ls())
 
-species <- "Mullus"
+species <- "Diplodus"
 
 library(tidyverse)
 library(sf)
@@ -68,7 +68,6 @@ plot(hc,main=paste("prioritizr",species))
 # (2) Targets met by solutions found with different scenarios
 #####################################################################################
 # For each scenario, I analyze whether the other scenarios meet its target,by calculating total shortfall over conservation features
-# shortfall <- array(NA,c(length(problems),length(results),100))
 amount_held <- array(NA,c(length(problems),length(results),100))
 i.prob <- j.prob <- 1
 for (i.prob in 1 : length(problems)) {
@@ -78,12 +77,6 @@ for (i.prob in 1 : length(problems)) {
                 cat(i.prob,j.prob,i.sol,"\n");
                 flush.console()
             }
-            # problems[[i.prob]] %>%
-            #     eval_target_coverage_summary(select(results[[j.prob]],paste0("solution_",i.sol))) %>% 
-            #     pull(relative_shortfall) %>%
-            #     sum() ->
-            #     shortfall[i.prob,j.prob,i.sol]
-            
             problems[[i.prob]] %>%
                 eval_target_coverage_summary(select(results[[j.prob]],paste0("solution_",i.sol))) %>% 
                 pull(relative_held) %>%
@@ -140,6 +133,16 @@ ggplot(mean_amount_held,aes(x=problem,y=amount_held)) +
     scale_fill_brewer(type="qual") +
     ylim(0.1,0.2)
 dev.off()
+
+# For Diplodus, inspect problems[[6]] (equal_12)
+problems[[6]] %>%
+    eval_target_coverage_summary(select(results[[1]],"solution_1")) %>%
+    pull(relative_held) %>% barplot()
+"Diplodus_a02" %>% grep(feature_names(problems[[6]]))
+comp_amount_held <- data.frame(equal12 = pull(eval_target_coverage_summary(problems[[6]], select(results[[2]],"solution_1")), relative_held),
+                               quantile3 = pull(eval_target_coverage_summary(problems[[6]], select(results[[1]],"solution_1")), relative_held))
+comp_amount_held$diff <- comp_amount_held$equal12 - comp_amount_held$quantile3
+
 # Raster
 # png(paste0("amount_held_prioritizr_",species,".png"),width=11,height=7.5,units="cm",res=300)
 # ggplot(mean_amount_held,aes(x=problem,y=scenario)) +
