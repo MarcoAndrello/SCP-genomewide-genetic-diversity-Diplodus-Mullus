@@ -78,7 +78,8 @@ for (i.prob in 1 : length(problems)) {
                 flush.console()
             }
             problems[[i.prob]] %>%
-                eval_target_coverage_summary(select(results[[j.prob]],paste0("solution_",i.sol))) %>% 
+                eval_target_coverage_summary(select(results[[j.prob]],paste0("solution_",i.sol))) %>%
+                filter(relative_target > 0) %>%
                 pull(relative_held) %>%
                 mean() ->
                 amount_held[i.prob,j.prob,i.sol]
