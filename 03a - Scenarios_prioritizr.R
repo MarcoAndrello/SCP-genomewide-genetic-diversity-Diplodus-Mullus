@@ -46,22 +46,25 @@ pus %>%
 # Extract genetic values from raster for the centroid of each PU
 g_rast_values <- terra::extract(g_rast,pus_centroid)
 
-# # Create an object containing the coordinates of the occupied PU
-# # in all genetic PCA axes: need this for finding clusters
-# pus_g_values <- cbind(g_rast_values, st_drop_geometry(pus))
-# names(pus_g_values)[1:ncol(g_rast_values)] <- paste0("pca",sprintf("%02d",1:ncol(g_rast_values)))
-# species_coord <- filter(pus_g_values, !!as.name(name_species) == 1) 
-# species_coord <- species_coord[1:num_axes]
-# rm(pus_g_values)
-# # Run kmeans with several number of clusters
-# wss <- vector()
-# for (i.clust in 1 : 20) {
-#     clusters <- kmeans(species_coord,centers=i.clust)
-#     wss[i.clust] <- clusters$tot.withinss
-# }
-# plot(c(1:20),wss,type="l")
-# # For Diplodus: it suggests 5 clusters. We use K = 2 (Boulanger et al 2022) and K = 5
-# # For Mullus: it suggests 7 clusters. We use K = 3 (Boulanger et al 2022) and K = 7
+# Create an object containing the coordinates of the occupied PU
+# in all genetic PCA axes: need this for finding clusters
+pus_g_values <- cbind(g_rast_values, st_drop_geometry(pus))
+names(pus_g_values)[1:ncol(g_rast_values)] <- paste0("pca",sprintf("%02d",1:ncol(g_rast_values)))
+species_coord <- filter(pus_g_values, !!as.name(name_species) == 1)
+species_coord <- species_coord[1:num_axes]
+rm(pus_g_values)
+# Run kmeans with several number of clusters
+wss <- vector()
+for (i.clust in 1 : 20) {
+    clusters <- kmeans(species_coord,centers=i.clust)
+    wss[i.clust] <- clusters$tot.withinss
+}
+png(paste0("Number_of_clusters_",species,".png"),width=10,height=10,units="cm",res=300)
+plot(c(1:20),wss,type="l",xlab="Number of clusters",ylab="Within sum-of-squares",
+     main = name_species)
+dev.off()
+# For Diplodus: it suggests 5 clusters. We use K = 2 (Boulanger et al 2022) and K = 5
+# For Mullus: it suggests 7 clusters. We use K = 3 (Boulanger et al 2022) and K = 7
 
 
 ################################################################################
