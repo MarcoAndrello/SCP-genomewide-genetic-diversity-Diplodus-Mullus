@@ -132,17 +132,9 @@ ggplot(mean_amount_held,aes(x=problem,y=amount_held)) +
     theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
     geom_hline(yintercept=0.15,linetype="dotted") +
     scale_fill_brewer(type="qual") +
-    ylim(0.1,0.2)
+    ylim(0.1,0.2005)
 dev.off()
 
-# For Diplodus, inspect problems[[6]] (equal_12)
-problems[[6]] %>%
-    eval_target_coverage_summary(select(results[[1]],"solution_1")) %>%
-    pull(relative_held) %>% barplot()
-"Diplodus_a02" %>% grep(feature_names(problems[[6]]))
-comp_amount_held <- data.frame(equal12 = pull(eval_target_coverage_summary(problems[[6]], select(results[[2]],"solution_1")), relative_held),
-                               quantile3 = pull(eval_target_coverage_summary(problems[[6]], select(results[[1]],"solution_1")), relative_held))
-comp_amount_held$diff <- comp_amount_held$equal12 - comp_amount_held$quantile3
 
 # Raster
 # png(paste0("amount_held_prioritizr_",species,".png"),width=11,height=7.5,units="cm",res=300)
