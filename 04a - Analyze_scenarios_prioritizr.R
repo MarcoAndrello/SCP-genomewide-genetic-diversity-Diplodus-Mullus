@@ -67,7 +67,7 @@ plot(hc,main=paste("prioritizr",species))
 #####################################################################################
 # (2) Targets met by solutions found with different scenarios
 #####################################################################################
-# For each scenario, I analyze whether the other scenarios meet its target,by calculating total shortfall over conservation features
+# For each scenario, I analyze whether the other scenarios meet its target,by calculating relative targets over conservation features
 amount_held <- array(NA,c(length(problems),length(results),100))
 i.prob <- j.prob <- 1
 for (i.prob in 1 : length(problems)) {
