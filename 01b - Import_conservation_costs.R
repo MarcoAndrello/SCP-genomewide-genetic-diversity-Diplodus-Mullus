@@ -36,6 +36,12 @@ intersection %>%
 # Join the mean costs to the PUs
 left_join(pus, mean_cost, by = "ID") -> pus
 
+# Calculate coordinates of the centroid of each PU
+pus %>%
+    st_geometry() %>%
+    st_centroid() %>%
+    st_coordinates() -> pus_centroid
+
 # Save
-save(pus,file="Planning_units.RData")
+save(pus,pus_centroid,file="Planning_units.RData")
 

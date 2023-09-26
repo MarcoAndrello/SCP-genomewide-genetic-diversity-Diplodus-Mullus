@@ -37,12 +37,6 @@ pus$status <- as.integer(pus$status) # status should be integer
 ## Genetic data
 g_rast <- rast(paste0(getwd(),genetic_raster))
 
-# Calculate coordinates of the centroid of each PU
-pus %>%
-    st_geometry() %>%
-    st_centroid() %>%
-    st_coordinates() -> pus_centroid
-
 # Extract genetic values from raster for the centroid of each PU
 g_rast_values <- terra::extract(g_rast,pus_centroid)
 
