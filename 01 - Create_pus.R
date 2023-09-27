@@ -5,6 +5,7 @@ rm(list=ls())
 library(terra)
 library(sf)
 library(tidyverse)
+library(units)
 
 # Define extent of planning region (domain) from long-lat coordinates in WGS84 CRS
 region <- st_sfc(
@@ -58,6 +59,8 @@ mr <-
     st_read(paste0(getwd(),"/data/Abecasis_2023_MPAs/MPAFinalList.shp")) %>%
     select(NAME,Area) %>%
     st_transform(mr,crs=st_crs(pus)) 
+# Total protected area
+mr %>% st_area %>% sum %>% set_units("km^2")
 # ## Unite overlapping MRs
 mr_union <- st_union(mr)
 ## Add ID field
@@ -87,6 +90,18 @@ pus$status_0[which(pus$perc_prot>0)] <- 1
 pus$status_0.01[which(pus$perc_prot>0.01)] <- 1
 pus$status_0.1[which(pus$perc_prot>0.1)] <- 1
 rm(b1,b2,mr, mr_union)
+pus %>% mutate(status_0.5 = 0) -> pus
+pus$status_0.5[which(pus$perc_prot>0.5)] <- 1
+
+# NUmber of protected PUs and area protected by those, according to different thresholds
+pus %>% filter(status_0==1) %>% pull(area_prot) %>% length
+pus %>% filter(status_0.01==1) %>% pull(area_prot) %>% length
+pus %>% filter(status_0.1==1) %>% pull(area_prot) %>% length
+pus %>% filter(status_0.5==1) %>% pull(area_prot) %>% length
+pus %>% filter(status_0==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
+pus %>% filter(status_0.01==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
+pus %>% filter(status_0.1==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
+pus %>% filter(status_0.5==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 
 # Save
 save(pus,file="Planning_units.RData")
