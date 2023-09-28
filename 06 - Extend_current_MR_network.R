@@ -10,6 +10,9 @@ library(sf)
 library(terra)
 library(parallel)
 library(rgeoda)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rnaturalearthhires)
 
 #############################################################################
 # Prioritizr
@@ -46,8 +49,8 @@ g_rast <- rast(paste0(getwd(),genetic_raster))
 # Extract genetic values from raster for the centroid of each PU
 g_rast_values <- terra::extract(g_rast,pus_centroid)
 
-class_method <- "equal"
-num_classes <- 12
+class_method <- "quantile"
+num_classes <- 6
 
 # Define classes
 pus_split.taxon <- pus
@@ -75,8 +78,8 @@ prob <- problem(pus_split.taxon,
     add_relative_targets(0.15) %>%
     add_binary_decisions() %>%
     add_locked_in_constraints(which(pus_split.taxon$status_0==1)) %>%
-    # add_gap_portfolio(number_solutions = 100, pool_gap = 0.02) %>%
-    add_gurobi_solver(gap=0, threads=threads)
+    add_gap_portfolio(number_solutions = 100, pool_gap = 0.02) %>%
+    add_gurobi_solver(gap=0.02, threads=threads)
 res <- solve(prob, run_checks=F)
 plot(res["solution_1"],border=NA)
 
@@ -84,9 +87,16 @@ res %>% filter(status_0 == 1) %>% select(Diplodus_sargus, mean_cost, status_0, s
 res %>% filter(status_0 == 1) %>% select(Diplodus_sargus, mean_cost, status_0, solution_1) %>% boxplot(mean_cost ~ solution_1,data=.)
 
 ### why locked_in PUs are not in the solution ???
-rm(st_matrix,class_method,num_classes,i.class_method,i.num_classes,i.scen,i.axis,v.class_method)
+res %>% st_drop_geometry %>% select(paste0("solution_",c(1:100))) %>% rowSums(na.rm=T) -> res$selection_frequency
+ne_countries(returnclass = "sf") %>% st_transform(st_crs(res)) -> countries
+ne_coastline(scale = 50, returnclass = "sf") %>% st_transform(st_crs(res)) -> coastline
+plot(st_geometry(coastline),extent=res)
+plot(res["selection_frequency"], border=NA, add=T)
 
-
+replacement_importance <- eval_replacement_importance(prob,res["solution_1"], run_checks=F)
+save(replacement_importance,file=paste0("Replacement_importance_prioritizr_",species,".RData"))
+plot(st_geometry(coastline),extent=res)
+plot(replacement_importance["rc"], border=NA, add=T)
 
 
 
