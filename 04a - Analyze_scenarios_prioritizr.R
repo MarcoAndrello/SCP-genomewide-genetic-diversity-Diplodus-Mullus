@@ -5,7 +5,7 @@
 
 rm(list=ls())
 
-species <- "Diplodus"
+species <- "Mullus"
 
 library(tidyverse)
 library(sf)
@@ -62,7 +62,6 @@ save(jaccard_distance, pvalue, file=paste0("Jaccard_distance_prioritizr_",specie
 # Plot a tree showing distances between solutions
 load(paste0("Jaccard_distance_prioritizr_",species,".RData"))
 hc <- hclust(as.dist(t(jaccard_distance)))
-
 png(paste0("hclust_prioritizr_",species,".png"),width=9,height=15,units="cm",res=300)
 par(mar=c(1,4,2,1))
 plot(hc,main=paste("prioritizr",species),xlab="",sub="")
