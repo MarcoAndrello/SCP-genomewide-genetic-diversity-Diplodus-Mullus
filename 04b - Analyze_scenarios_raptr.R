@@ -6,7 +6,7 @@
 
 rm(list=ls())
 
-species <- "Mullus"
+species <- "Diplodus"
 
 library(tidyverse)
 library(sf)
@@ -205,10 +205,12 @@ dev.off()
 #####################################################################################
 # (4) Maximum targets
 #####################################################################################
-maximum_targets_list <- lapply(problems, maximum.targets) 
+maximum_targets_list <- lapply(problems, maximum.targets)
 maximum_targets <- bind_rows(maximum_targets_list, .id="problem")
 maximum_targets$problem <- factor(maximum_targets$problem,
                                   levels=names(problems))
+save(maximum_targets,file=paste0("Maximum_targets_raptr_",species,".RData"))
+load(paste0("Maximum_targets_raptr_",species,".RData"))
 # Plot
 png(paste0("Maximum_target_raptr_",species,".png"),width=7.5,height=7.5,units="cm",res=300)    
 theme_set(theme_classic())
@@ -217,3 +219,10 @@ ggplot(maximum_targets,aes(x=problem,y=proportion)) +
     theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0.5)) +
     ggtitle(paste0(paste("raptr",species)))
 dev.off()
+
+# For Diplodus
+maximum_targets %>% filter(problem=="single_quantile_3")
+problems[[1]]@data@attribute.spaces[[1]]@spaces[[1]]@planning.unit.points@coords %>% 
+    hist(breaks=85, border=NA, xlab="PU coordinates (PCA axis scores) in genetic space #9",main="",ylab="Number of PUs")
+problems[[1]]@data@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords %>% as.vector -> dp_coords
+matrix(c(dp_coords,rep(0,3)),nrow=3) %>% points(pch=16,col="red",cex=1)
