@@ -220,9 +220,35 @@ ggplot(maximum_targets,aes(x=problem,y=proportion)) +
     ggtitle(paste0(paste("raptr",species)))
 dev.off()
 
-# For Diplodus
+# For Diplodus: show why some maximum targets in single_quantile_3 are low
 maximum_targets %>% filter(problem=="single_quantile_3")
-problems[[1]]@data@attribute.spaces[[1]]@spaces[[1]]@planning.unit.points@coords %>% 
-    hist(breaks=85, border=NA, xlab="PU coordinates (PCA axis scores) in genetic space #9",main="",ylab="Number of PUs")
-problems[[1]]@data@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords %>% as.vector -> dp_coords
-matrix(c(dp_coords,rep(0,3)),nrow=3) %>% points(pch=16,col="red",cex=1)
+## Draw and histogram to show PU classification and demand points
+problems[[1]]@data@attribute.spaces[[10]]@spaces[[1]]@planning.unit.points@coords %>% as.vector -> pu_coords 
+problems[[1]]@data@attribute.spaces[[10]]@spaces[[1]]@demand.points@coords %>% as.vector -> dp_coords
+### Re-run Classification 
+library(rgeoda)
+library(DescTools)
+source(paste0(getwd(),"/functions/split.taxon.R"))
+g_rast <- rast(paste0(getwd(),"/Results May_2023/Diplodus_allAxes_8068.grd"))
+g_rast_values <- terra::extract(g_rast,pus_centroid)
+load("Planning_units.RData")
+res_split.taxon <- split.taxon(x = g_rast_values[,10],
+                               num_classes = 3,
+                               class_method = "quantile",
+                               rij_taxon = pull(pus,"Diplodus_sargus"),
+                               name_feat = paste0("Diplodus_a",sprintf("%02d",10)),
+                               return_class_midpoint = T)
+### Histogram bars will be coloured according to the class of a PU
+res_split.taxon[[2]] %>% apply(1,which.max) -> color_pus
+### Create a new data,frame with colors and only the occupied PUs
+pus %>% st_drop_geometry %>% transmute(Diplodus_sargus = Diplodus_sargus, color = color_pus) %>% filter(Diplodus_sargus == 1) %>%
+    mutate(pu_coords = pu_coords) -> pu_coords_color
+### Plot the histogram
+png(paste0("Example_dp_raptr_",species,".png"),width=15,height=10,units="cm",res=300)
+pu_coords_color %>% filter(color==1) %>% pull(pu_coords) %>%
+    hist(breaks=seq(-11.75,15.5,0.25), border=NA,
+         xlab="PU coordinates (PCA axis scores) in genetic space #10", main="", ylab="Number of PUs", col="navy")
+pu_coords_color %>% filter(color==2) %>% pull(pu_coords) %>% hist(breaks=seq(-11.75,15.5,0.25), border=NA, add=T, col="orange")
+pu_coords_color %>% filter(color==3) %>% pull(pu_coords) %>% hist(breaks=seq(-11.75,15.5,0.25), border=NA, add=T, col="darkgreen")
+matrix(c(dp_coords,rep(-2.5,3)),nrow=3) %>% points(pch=24,col="black", bg=c("navy","orange","darkgreen"), cex=0.80)
+dev.off()
