@@ -7,6 +7,7 @@ library(terra)
 library(sf)
 library(adegenet)
 library(gstat)
+library(rnaturalearth)
 
 current.dir <- getwd()
 
@@ -14,7 +15,6 @@ current.dir <- getwd()
 load("Planning_units.RData")
 
 # Create raster covering the extent of pus (for interpolation)
-# pusr <- raster::raster(pus,resolution=c(10000,10000),crs=st_crs(pus))
 pust <- rast(pus, resolution = c(10000, 10000), crs = crs(pus))
 
 # Load sampling data: 
@@ -51,7 +51,15 @@ names(other(xpop)$xy) <- c("x","y")
 pca <- dudi.pca(xpop)
 save(pca,file=paste0(getwd(),"/Results May_2023/Diplodus_pca_pop.RData"))
 
-# Interpolation
+# Plot PCA (biplot and screeplot)
+load(paste0(getwd(),"/Results May_2023/Diplodus_pca_pop.RData"))
+png(paste0("PCA_biplot_Diplodus.png"),width=15,height=15,units="cm",res=300)
+plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Diplodus sargus")
+dev.off()
+screeplot(pca)
+pca$eig/sum(pca$eig)
+
+ # Interpolation
 # load(paste0(getwd(),"/Results May_2023/Diplodus_pca.RData"))
 # Define obs sf object so we can convert the lat-lon coordinates to Albers equal area
 obs <- st_as_sf(data.frame(pca1=0,
@@ -78,8 +86,27 @@ for (i.axis in 1 :ncol(pca$li)){
 Diplodus_pca <- rast(pca_interp)
 writeRaster(Diplodus_pca, file="Diplodus_allAxes_8068.grd")
 
-# eventualmente rifare sul set con i neutrali con quelli non in HWE. Discuterne con Stéphanie
+# Plotting the rasters
+g_rast <- rast(paste0(getwd(),"/Results May_2023/Diplodus_allAxes_8068.grd"))
+names(g_rast) <- paste("Axis",c(1:nlyr(g_rast)))
+# Read countries for plotting maps
+ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
+png(paste0("Genetic_rasters_Diplodus.png"),width=20,height=24,units="cm",res=300)
+par(mfrow=c(6,3))
+is.last <- F
+for (i in 1 : 17) {
+    if (i == 17) is.last=T
+    plot(g_rast,i,mar=c(0.5,0.1,1,0.1),axes=F,legend=is.last,main=paste("Axis",i))
+    polys(countries,col="gray",lwd=0.01)
+}
+dev.off()
 
+# Absolute scaled values averaged over layers
+g_rast_scaled_abs <- abs(scale(g_rast))
+png(paste0("Average_raster_Diplodus.png"),width=10,height=8,units="cm",res=300)
+plot(mean(g_rast_scaled_abs[[1:17]]),main="Diplodus sargus",col=rev(heat.colors(20)),cex.main=0.5)
+polys(countries,col="gray",lwd=0.01)
+dev.off()
 
 
 ####################
@@ -98,6 +125,14 @@ names(other(xpop)$xy) <- c("x","y")
 # Perform PCA
 pca <- dudi.pca(xpop)
 save(pca,file=paste0(getwd(),"/Results May_2023/Mullus_pca_pop.RData"))
+# Plot PCA (biplot and screeplot)
+load(paste0(getwd(),"/Results May_2023/Mullus_pca_pop.RData"))
+png(paste0("PCA_biplot_Mullus.png"),width=15,height=15,units="cm",res=300)    
+plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Mullus surmuletus")
+dev.off()
+screeplot(pca)
+pca$eig/sum(pca$eig)
+
 # Interpolation
 # load(paste0(getwd(),"/Results May_2023/Mullus_pca.RData"))
 obs <- st_as_sf(data.frame(pca1=0,
@@ -118,6 +153,34 @@ for (i.axis in 1 : ncol(pca$li)){
 }
 Mullus_pca <- rast(pca_interp)
 writeRaster(Mullus_pca, file="Mullus_allAxes_2753.grd")
+
+# Plotting the rasters
+g_rast <- rast(paste0(getwd(),"/Results May_2023/Mullus_allAxes_2753.grd"))
+names(g_rast) <- paste("Axis",c(1:nlyr(g_rast)))
+# Read countries for plotting maps
+ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
+is.last <- F
+png(paste0("Genetic_rasters_Mullus_1.png"),width=20,height=24,units="cm",res=300)
+par(mfrow=c(6,3))
+for (i in 1 : 18) {
+    plot(g_rast,i,mar=c(0.5,0.1,1,0.1),axes=F,legend=F,main=paste("Axis",i))
+    polys(countries,col="gray",lwd=0.01)
+}
+dev.off()
+png(paste0("Genetic_rasters_Mullus_2.png"),width=20,height=24,units="cm",res=300)
+par(mfrow=c(6,3))
+for (i in 19 : 26) {
+    if (i == 26) is.last=T
+    plot(g_rast,i,mar=c(0.5,0.1,1,0.1),axes=F,legend=is.last,main=paste("Axis",i))
+    polys(countries,col="gray",lwd=0.01)
+}
+dev.off()
+# Absolute scaled values averaged over layers
+g_rast_scaled_abs <- abs(scale(g_rast))
+png(paste0("Average_raster_Mullus.png"),width=10,height=8,units="cm",res=300)
+plot(mean(g_rast_scaled_abs[[1:26]]),main="Mullus surmuletus",col=rev(heat.colors(20)),cex.main=0.5)
+polys(countries,col="gray",lwd=0.01)
+dev.off()
 
 xtab <- xpop$tab
 xtab <- xtab[,match(levels(xpop@loc.fac),xpop@loc.fac)]
