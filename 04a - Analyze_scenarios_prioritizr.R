@@ -70,9 +70,47 @@ dev.off()
 
 
 #####################################################################################
-# (2) Targets met by solutions found with different scenarios
+# (2) Amount held by solutions found with different scenarios
 #####################################################################################
-# For each scenario, I analyze whether the other scenarios meet its target,by calculating relative targets over conservation features
+# For each planning problem, I calculate the amount held by solutions of other planning problems
+
+list_amount_held <- list()
+plots <- list()
+theme_set(theme_classic())
+i.prob <- j.prob <- 1
+for (i.prob in 1 : length(problems)) {
+    k <- 1
+    for (j.prob in 1 : length(results)) {
+        for (i.sol in 1 : 100) {
+            if (i.sol %% 25 == 0) {
+                cat(i.prob,j.prob,i.sol,"\n");
+                flush.console()
+            }
+            problems[[i.prob]] %>%
+                eval_target_coverage_summary(select(results[[j.prob]],paste0("solution_",i.sol))) %>%
+                filter(relative_target > 0) %>%
+                select(feature, relative_held) %>%
+                mutate(problem = names(problems)[i.prob], solution = names(results)[j.prob], sol = as.integer(i.sol)) ->
+                list_amount_held[[k]]
+            k <- k + 1
+        }
+    }
+    amount_held <- bind_rows(list_amount_held)
+    amount_held$problem <- factor(amount_held$problem, levels=names(problems))
+    amount_held$solution <- factor(amount_held$solution, levels=names(results))
+    ggplot(amount_held) +
+        geom_violin(aes(x=solution, y=relative_held), fill="black") +
+        theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+        geom_hline(yintercept=0.15,linetype="dotted") +
+        ggtitle(paste(species,names(problems)[[i.prob]])) ->
+    plots[[i.prob]]
+}
+save(plots,file="plots_prioritizr_mullus.RData")
+#
+
+
+
+
 amount_held <- array(NA,c(length(problems),length(results),100))
 i.prob <- j.prob <- 1
 for (i.prob in 1 : length(problems)) {

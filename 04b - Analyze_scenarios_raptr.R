@@ -6,7 +6,7 @@
 
 rm(list=ls())
 
-species <- "Diplodus"
+species <- "Mullus"
 
 library(tidyverse)
 library(sf)
@@ -95,6 +95,47 @@ plot(pus["diff_sel"],border=NA,
 # (2) Targets met by solutions found with different scenarios
 #####################################################################################
 # For each scenario, I analyze whether the other scenarios meet its target, by calculating the space held and distance to maximum targets
+
+list_space_held <- list()
+plots <- list()
+theme_set(theme_classic())
+i.prob <- j.prob <- 1
+for (i.prob in 1 : length(problems)) {
+    k <- 1
+    for (j.prob in 1 : length(results)) {
+        for (i.sol in 1 : 100) {
+            if (i.sol %% 25 == 0) {
+                cat(i.prob,j.prob,i.sol,"\n");
+                flush.console()
+            }
+            if(i.prob == j.prob) {
+                space_held_solution <- space.held(results[[i.prob]], y=i.sol,space=NULL) %>% as.vector()
+            } else {
+                selections <- which(results[[j.prob]]@results@selections[i.sol,]==1)
+                res_updated <- update(results[[i.prob]], b = selections)
+                space_held_solution <- space.held(res_updated, y=1,space=NULL) %>% as.vector()
+            }
+            data.frame(space_held = space_held_solution,
+                       problem = names(problems)[[i.prob]],
+                       solution = names(results)[[j.prob]],
+                       sol = as.integer(i.sol)) ->
+                list_space_held[[k]]
+            k <- k + 1
+        }
+    }
+    space_held <- bind_rows(list_space_held)
+    space_held$problem <- factor(space_held$problem, levels=names(problems))
+    space_held$solution <- factor(space_held$solution, levels=names(results))
+    ggplot(space_held) +
+        geom_violin(aes(x=solution, y=space_held), fill="black") +
+        theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+        ggtitle(paste(species,names(problems)[[i.prob]])) ->
+        plots[[i.prob]]
+}
+save(plots,file="plots_raptr_mullus.RData")
+
+
+
 space_held <- distance_to_maximum <- array(NA,c(length(problems),length(results),100))
 i.prob <- j.prob <- 1
 for (i.prob in 1 : length(problems)) {
