@@ -72,25 +72,27 @@ dev.off()
 #####################################################################################
 # (2) Amount held by solutions found with different scenarios
 #####################################################################################
-# For each planning problem, I calculate the amount held by solutions of other planning problems
 
+# For each solution, I calculate the amount held in other planning problems
 list_amount_held <- list()
 plots <- list()
 theme_set(theme_classic())
 i.prob <- j.prob <- 1
-for (i.prob in 1 : length(problems)) {
+i.prob <- 2
+j.prob <- 6
+for (i.prob in 1 : length(results)) {
     k <- 1
-    for (j.prob in 1 : length(results)) {
+    for (j.prob in 1 : length(problems)) {
         for (i.sol in 1 : 100) {
             if (i.sol %% 25 == 0) {
-                cat(i.prob,j.prob,i.sol,"\n");
+                cat("solutions",i.prob,"for problem",j.prob,i.sol,"\n");
                 flush.console()
             }
-            problems[[i.prob]] %>%
-                eval_target_coverage_summary(select(results[[j.prob]],paste0("solution_",i.sol))) %>%
+            problems[[j.prob]] %>%
+                eval_target_coverage_summary(select(results[[i.prob]],paste0("solution_",i.sol))) %>%
                 filter(relative_target > 0) %>%
                 select(feature, relative_held) %>%
-                mutate(problem = names(problems)[i.prob], solution = names(results)[j.prob], sol = as.integer(i.sol)) ->
+                mutate(problem = names(problems)[j.prob], solution = names(results)[i.prob], sol = as.integer(i.sol)) ->
                 list_amount_held[[k]]
             k <- k + 1
         }
@@ -98,17 +100,56 @@ for (i.prob in 1 : length(problems)) {
     amount_held <- bind_rows(list_amount_held)
     amount_held$problem <- factor(amount_held$problem, levels=names(problems))
     amount_held$solution <- factor(amount_held$solution, levels=names(results))
+    
     ggplot(amount_held) +
-        geom_violin(aes(x=solution, y=relative_held), fill="black") +
+        geom_violin(aes(x=problem, y=relative_held), fill="black") +
         theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
         geom_hline(yintercept=0.15,linetype="dotted") +
-        ggtitle(paste(species,names(problems)[[i.prob]])) ->
-    plots[[i.prob]]
+        ggtitle(paste(species,"- solutions of",names(problems)[[i.prob]])) ->
+        plots[[i.prob]]
 }
-save(plots,file="plots_prioritizr_mullus.RData")
+save(plots,file="plots_prioritizr_Mullus_bySol.RData")
+load("plots_prioritizr_Diplodus_bySol.RData")
+species <- "Diplodus"
+png(paste0("amount_held_prioritizr_",species,".png"),width=15,height=10,units="cm",res=300)
+plots[[2]]
+dev.off()
+
+# # For each planning problem, I calculate the amount held by solutions of other planning problems
+# 
+# list_amount_held <- list()
+# plots <- list()
+# theme_set(theme_classic())
+# i.prob <- j.prob <- 1
+# for (i.prob in 1 : length(problems)) {
+#     k <- 1
+#     for (j.prob in 1 : length(results)) {
+#         for (i.sol in 1 : 100) {
+#             if (i.sol %% 25 == 0) {
+#                 cat(i.prob,j.prob,i.sol,"\n");
+#                 flush.console()
+#             }
+#             problems[[i.prob]] %>%
+#                 eval_target_coverage_summary(select(results[[j.prob]],paste0("solution_",i.sol))) %>%
+#                 filter(relative_target > 0) %>%
+#                 select(feature, relative_held) %>%
+#                 mutate(problem = names(problems)[i.prob], solution = names(results)[j.prob], sol = as.integer(i.sol)) ->
+#                 list_amount_held[[k]]
+#             k <- k + 1
+#         }
+#     }
+#     amount_held <- bind_rows(list_amount_held)
+#     amount_held$problem <- factor(amount_held$problem, levels=names(problems))
+#     amount_held$solution <- factor(amount_held$solution, levels=names(results))
+#     ggplot(amount_held) +
+#         geom_violin(aes(x=solution, y=relative_held), fill="black") +
+#         theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
+#         geom_hline(yintercept=0.15,linetype="dotted") +
+#         ggtitle(paste(species,names(problems)[[i.prob]])) ->
+#     plots[[i.prob]]
+# }
+# save(plots,file="plots_prioritizr_mullus.RData")
 #
-
-
 
 
 amount_held <- array(NA,c(length(problems),length(results),100))
