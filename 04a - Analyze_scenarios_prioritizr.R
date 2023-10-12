@@ -12,6 +12,7 @@ library(sf)
 library(ade4)
 library(vegan)
 library(prioritizr)
+library(gridExtra)
 
 load(paste0("Results_prioritizr_",species,".RData"))
 
@@ -108,12 +109,24 @@ for (i.prob in 1 : length(results)) {
         ggtitle(paste(species,"- solutions of",names(problems)[[i.prob]])) ->
         plots[[i.prob]]
 }
-save(plots,file="plots_prioritizr_Mullus_bySol.RData")
-load("plots_prioritizr_Diplodus_bySol.RData")
-species <- "Diplodus"
-png(paste0("amount_held_prioritizr_",species,".png"),width=15,height=10,units="cm",res=300)
+save(plots,file=paste0("Plots_amount_held_",species,".RData"))
+load(paste0("Plots_amount_held_",species,".RData"))
+png(paste0("Amount_held_prioritizr_",species,".png"),width=15,height=10,units="cm",res=300)
 plots[[2]]
 dev.off()
+
+# Supplementary Figure: all solutions
+lay <- rbind(c(1,2,3),
+             c(4,5,6),
+             c(7,8,9),
+             c(10,11,12),
+             c(10,11,12))
+for (i in 1 : 9) plots[[i]] <- plots[[i]] + theme(axis.text.x=element_blank(), axis.title.x=element_blank())
+png(paste0("Amount_held_prioritizr_",species,"_SUPPLEMENTARY.png"),width=35,height=30,units="cm",res=300)
+marrangeGrob(plots,layout_matrix = lay)
+dev.off()
+
+
 
 # # For each planning problem, I calculate the amount held by solutions of other planning problems
 # 

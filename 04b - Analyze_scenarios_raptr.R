@@ -13,6 +13,7 @@ library(sf)
 library(ade4)
 library(vegan)
 library(raptr)
+library(gridExtra)
 
 load(paste0("Results_raptr_",species,".RData"))
 
@@ -139,6 +140,20 @@ load(paste0("Plots_space_held_",species,".RData"))
 png(paste0("Space_held_raptr_",species,".png"),width=15,height=10,units="cm",res=300)
 plots[[2]] + geom_hline(yintercept=0.75,linetype="dotted")
 dev.off()
+
+# Supplementary Figure: all solutions
+lay <- rbind(c(1,2,3),
+             c(4,5,6),
+             c(7,8,9),
+             c(10,11,12),
+             c(10,11,12))
+plots12 <- plots[-12]
+for (i in 1 : 9) plots12[[i]] <- plots12[[i]] + theme(axis.text.x=element_blank(), axis.title.x=element_blank())
+for (i in 1 : 12) plots12[[i]] <- plots12[[i]] + geom_hline(yintercept=0.75,linetype="dotted")
+png(paste0("space_held_raptr_",species,"_SUPPLEMENTARY.png"),width=35,height=30,units="cm",res=300)
+marrangeGrob(plots12,layout_matrix = lay)
+dev.off()
+
 
 # # For each scenario, I calculate the space held under different solutions
 # list_space_held <- list()
