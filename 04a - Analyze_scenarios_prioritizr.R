@@ -5,7 +5,7 @@
 
 rm(list=ls())
 
-species <- "Mullus"
+species <- "Diplodus"
 
 library(tidyverse)
 library(sf)

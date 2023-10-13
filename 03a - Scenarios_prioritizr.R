@@ -37,8 +37,6 @@ load("Planning_units.RData")
 ## Genetic data
 g_rast <- rast(paste0(getwd(),genetic_raster))
 
-
-
 # Extract genetic values from raster for the centroid of each PU
 g_rast_values <- terra::extract(g_rast,pus_centroid)
 

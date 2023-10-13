@@ -20,66 +20,83 @@ load(paste0("Results_prioritizr_",species,".RData"))
 rm(results)
 
 # For each scenario, I analyze whether the other scenarios meet its target,by calculating relative targets over conservation features
-amount_held <- array(NA,length(problems))
+list_amount_held <- list()
 i.prob <- 1
 for (i.prob in 1 : length(problems)) {
     eval_target_coverage_summary(problems[[i.prob]],
                                  select(pus, status_0)) %>%
         filter(relative_target > 0) %>%
-        pull(relative_held) %>%
-        mean() ->
-        amount_held[i.prob]
+        select(feature, relative_held) %>%
+        mutate(problem = names(problems)[i.prob]) ->
+    list_amount_held[[i.prob]]
 }
-amount_held <- tibble(problem=names(problems),amount_held=amount_held)
+amount_held <- bind_rows(list_amount_held)
 amount_held$problem <- factor(amount_held$problem,
                               levels=names(problems))
 
-png(paste0("Evaluate_MR_prioritizr_",species,".png"),width=7.5,height=7.5,units="cm",res=300)
+png(paste0("Evaluate_MR_prioritizr_",species,".png"),width=15,height=10,units="cm",res=300)
 theme_set(theme_classic())
 ggplot(amount_held,aes(x=problem,y=amount_held)) +
-    geom_point() +
+    geom_violin(aes(x=problem, y=relative_held), fill="black") +
     theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0.5)) +
     geom_hline(yintercept=0.15, linetype="dotted") +
-    ylim(0,0.15)
+    ggtitle("Existing marine reserves") +
+    xlab(paste(species,"planning problems (prioritizr)")) +
+    ylim(0,1)
 dev.off()
 rm(problems, amount_held, i.prob)
 #    
     
-    
+# Species occurrence held
+prob_species_occurrence <- problem(pus,
+                                   features = c("Diplodus_sargus","Mullus_surmuletus"),
+                                   cost_column = "cost") %>%
+    add_relative_targets(0.15) %>%
+    add_binary_decisions()
+eval_target_coverage_summary(prob_species_occurrence,
+                             select(pus, status_0))
+
+
 #####################################################################################
 # Raptr
 #####################################################################################
 load(paste0("Results_raptr_",species,".RData"))
 
 selections <- which(pus$status_0 == 1)
-space_held <- distance_to_maximum <- vector()
+list_space_held <- list()
+i.prob <- 1
 for (i.prob in 1 : length(results)){
     cat(i.prob,"\n"); flush.console()
-    maximum_targets_problem <- maximum.targets(results[[i.prob]])$proportion
+    # maximum_targets_problem <- maximum.targets(results[[i.prob]])$proportion
     res_updated <- update(results[[i.prob]], b = selections)
-    space_held_feature <- space.held(res_updated, y=1, space=NULL) %>% as.vector()
-    space_held[i.prob] <- mean(space_held_feature)
-    # distance_to_maximum[i.prob] <- mean(maximum_targets_problem - space_held_feature)
+    space_held_feature <- space.held(res_updated, y=1, space=NULL) %>%
+        t %>%
+        as_tibble %>%
+        mutate(space_name=row.names(.), problem = names(problems)[i.prob])
+    names(space_held_feature)[1] <- "space_held"
+    list_space_held[[i.prob]] <- space_held_feature
+    if(i.prob > 10) {
+        list_space_held[[i.prob]] <- rbind(space_held_feature,space_held_feature,space_held_feature) ### METODO RAPIDO E SPORCO PER CREARE UN VIOLIN PLOT ANCHE QUANDO HO UNA SOLA OSSERVAZIONE
+        list_space_held[[i.prob]]$space_held <- list_space_held[[i.prob]]$space_held + rnorm(3,0,0.01)
+    }
 }
-rm(maximum_targets_problem, space_held_feature, selections, res_updated)
-space_held <- tibble(problem=names(problems),space_held=space_held)
+rm(space_held_feature, selections, res_updated)
+space_held <- bind_rows(list_space_held)
 space_held$problem <- factor(space_held$problem,
                             levels=names(problems))
-png(paste0("Evaluate_MR_raptr_",species,".png"),width=7.5,height=7.5,units="cm",res=300)
+
+# space_held %>% group_by(problem) %>% summarise(mean_space_held=mean(space_held)) -> mean_space_held
+png(paste0("Evaluate_MR_raptr_",species,".png"),width=15,height=10,units="cm",res=300)
 theme_set(theme_classic())
-ggplot(space_held ,aes(x=problem,y=space_held )) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0.5)) 
+ggplot(space_held,aes(x=problem,y=space_held)) +
+    geom_violin(aes(x=problem, y=space_held), fill="black") +
+    theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0.5)) +
+    geom_hline(yintercept=0.75, linetype="dotted") +
+    ggtitle("Existing marine reserves") +
+    xlab(paste(species,"planning problems (raptr)")) +
+    ylim(0,1) 
 dev.off()
 
-# distance_to_maximum <- tibble(problem=names(problems),distance_to_maximum=distance_to_maximum)
-# distance_to_maximum$problem <- factor(distance_to_maximum$problem,
-#                               levels=names(problems))
-# png(paste0("Evaluate_MR_raptr_distance_",species,".png"),width=7.5,height=7.5,units="cm",res=300)
-# theme_set(theme_classic())
-# ggplot(distance_to_maximum ,aes(x=problem,y=distance_to_maximum )) +
-#     geom_point() +
-#     theme(axis.text.x = element_text(angle = 90,hjust=1,vjust=0.5)) 
-# dev.off()
+
 rm(problems, results, space_held, distance_to_maximum, i.prob)
 
