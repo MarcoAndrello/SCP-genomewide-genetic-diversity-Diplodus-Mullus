@@ -23,11 +23,13 @@ pust <- rast(pus, resolution = c(10000, 10000), crs = crs(pus))
 # for each Mullus individual
 load(paste0(getwd(),"/data/sampling.RData"))
 
+
+
 ####################
 # Diplodus sargus
 ####################
 
-# Load merged (neutral + adaptive) dataset (but this exlcudes the non-outlier that are  not in HWE)
+# Load merged (neutral + adaptive) dataset (but this excludes the non-outlier that are not in HWE)
 load(paste0(getwd(),"/data/Diplodus_8068.RData"))
 x <- Diplodus_8068; rm(Diplodus_8068)
 # Add population information
@@ -44,23 +46,20 @@ save(Diplodus_coord,file="Diplodus_coord.RData")
 other(xpop)$xy <- Diplodus_coord 
 names(other(xpop)$xy) <- c("x","y")
 
-# Perform (spatial) PCA
-# spca_neutr <- spca(xpop)
-# save(spca_neutr,file=paste0(getwd(),"/Results sPCA/Diplodus_spca_neutr.RData"))
-# NEED TO DO IT ONLY ON LOCI, NOT ALLELES
+# Perform PCA
 pca <- dudi.pca(xpop)
-save(pca,file=paste0(getwd(),"/Results May_2023/Diplodus_pca_pop.RData"))
+save(pca,file=paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
 
 # Plot PCA (biplot and screeplot)
-load(paste0(getwd(),"/Results May_2023/Diplodus_pca_pop.RData"))
+load(paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
 png(paste0("PCA_biplot_Diplodus.png"),width=15,height=15,units="cm",res=300)
 plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Diplodus sargus")
 dev.off()
 screeplot(pca)
 pca$eig/sum(pca$eig)
 
- # Interpolation
-# load(paste0(getwd(),"/Results May_2023/Diplodus_pca.RData"))
+# Interpolation
+# load(paste0(getwd(),"/Results/Diplodus_pca.RData"))
 # Define obs sf object so we can convert the lat-lon coordinates to Albers equal area
 obs <- st_as_sf(data.frame(pca1=0,
                            lon=xpop@other$xy$x,
@@ -84,10 +83,10 @@ for (i.axis in 1 :ncol(pca$li)){
 }
 # Save as raster
 Diplodus_pca <- rast(pca_interp)
-writeRaster(Diplodus_pca, file="Diplodus_allAxes_8068.grd")
+writeRaster(Diplodus_pca, file=paste0(getwd(),"/Results/Diplodus_allAxes_8068.grd"))
 
-# Plotting the rasters
-g_rast <- rast(paste0(getwd(),"/Results May_2023/Diplodus_allAxes_8068.grd"))
+# Plotting the rasters - Figure S3
+g_rast <- rast(paste0(getwd(),"/Results/Diplodus_allAxes_8068.grd"))
 names(g_rast) <- paste("Axis",c(1:nlyr(g_rast)))
 # Read countries for plotting maps
 ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
@@ -101,12 +100,6 @@ for (i in 1 : 17) {
 }
 dev.off()
 
-# Absolute scaled values averaged over layers
-g_rast_scaled_abs <- abs(scale(g_rast))
-png(paste0("Average_raster_Diplodus.png"),width=10,height=8,units="cm",res=300)
-plot(mean(g_rast_scaled_abs[[1:17]]),main="Diplodus sargus",col=rev(heat.colors(20)),cex.main=0.5)
-polys(countries,col="gray",lwd=0.01)
-dev.off()
 
 
 ####################
@@ -124,9 +117,9 @@ other(xpop)$xy <- Mullus_coord
 names(other(xpop)$xy) <- c("x","y")
 # Perform PCA
 pca <- dudi.pca(xpop)
-save(pca,file=paste0(getwd(),"/Results May_2023/Mullus_pca_pop.RData"))
+save(pca,file=paste0(getwd(),"/Results/Mullus_pca_pop.RData"))
 # Plot PCA (biplot and screeplot)
-load(paste0(getwd(),"/Results May_2023/Mullus_pca_pop.RData"))
+load(paste0(getwd(),"/Results/Mullus_pca_pop.RData"))
 png(paste0("PCA_biplot_Mullus.png"),width=15,height=15,units="cm",res=300)    
 plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Mullus surmuletus")
 dev.off()
@@ -134,7 +127,7 @@ screeplot(pca)
 pca$eig/sum(pca$eig)
 
 # Interpolation
-# load(paste0(getwd(),"/Results May_2023/Mullus_pca.RData"))
+# load(paste0(getwd(),"/Results/Mullus_pca.RData"))
 obs <- st_as_sf(data.frame(pca1=0,
                            lon=xpop@other$xy$x,
                            lat=xpop@other$xy$y),
@@ -152,10 +145,10 @@ for (i.axis in 1 : ncol(pca$li)){
   pca_interp[[i.axis]] <- a[[1]]
 }
 Mullus_pca <- rast(pca_interp)
-writeRaster(Mullus_pca, file="Mullus_allAxes_2753.grd")
+writeRaster(Mullus_pca, file=paste0(getwd(),"/Results/Mullus_allAxes_2753.grd"))
 
-# Plotting the rasters
-g_rast <- rast(paste0(getwd(),"/Results May_2023/Mullus_allAxes_2753.grd"))
+# Plotting the rasters - Figure S4
+g_rast <- rast(paste0(getwd(),"/Results/Mullus_allAxes_2753.grd"))
 names(g_rast) <- paste("Axis",c(1:nlyr(g_rast)))
 # Read countries for plotting maps
 ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
@@ -175,24 +168,4 @@ for (i in 19 : 26) {
     polys(countries,col="gray",lwd=0.01)
 }
 dev.off()
-# Absolute scaled values averaged over layers
-g_rast_scaled_abs <- abs(scale(g_rast))
-png(paste0("Average_raster_Mullus.png"),width=10,height=8,units="cm",res=300)
-plot(mean(g_rast_scaled_abs[[1:26]]),main="Mullus surmuletus",col=rev(heat.colors(20)),cex.main=0.5)
-polys(countries,col="gray",lwd=0.01)
-dev.off()
 
-xtab <- xpop$tab
-xtab <- xtab[,match(levels(xpop@loc.fac),xpop@loc.fac)]
-pcal <- dudi.pca(xtab)
-plot(pca$li[,3],pcal$li[,4])
-plot(pca$li[,4],pcal$li[,3])
-
-# Interpolation code:
-  # # Using terra
-  # obs1 <- cbind(st_drop_geometry(obs),st_coordinates(obs))
-  # gs <- gstat(formula=pca1~1, locations=~X+Y, data=obs1, nmax=5, set=list(idp=0))
-  # a1 <-terra::interpolate(object=pust, model=gs, xyNames=c("X", "Y"))
-  # # Using raster
-  # gs2 <- gstat(formula=pca1~1, locations=obs, nmax=5, set=list(idp=0))
-  # a2 <- raster::interpolate(pusr, gs2)
