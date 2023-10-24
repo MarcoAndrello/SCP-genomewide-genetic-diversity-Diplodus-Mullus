@@ -29,7 +29,7 @@ pus %>% st_centroid() %>% st_transform(crs=st_crs(4326)) %>% st_coordinates() ->
 terra::extract(etopo1, pu_coord_4326) -> depth
 rm(etopo1, pu_coord_4326)
 
-# Read Fishmed data (in future, use package "terra", which handle PROJ > 4)
+# Read Fishmed data
 FishMed_grid <- read.csv("FishMed_2species_1980.csv",h=T,sep=";")
 FishMed_grid <- rast(FishMed_grid, type="xyz", crs="EPSG:4326")
 
@@ -49,10 +49,15 @@ pus %>% filter(Depth < 0 & Depth > -200) %>% filter(!is.na(Diplodus_sargus)) -> 
 # all(which(!is.na(pus$Diplodus_sargus)) == which(!is.na(pus$Mullus_surmuletus))) is TRUE
 
 # Add cost, area and status
-### HERE WILL ADD COST FROM SYLVAINE GIAKOUMI
 pus$cost <- 1
 pus$area <- st_area(pus)
 pus$status <- 0L
+
+
+
+################################################################################
+# Identify protected PUs
+################################################################################
 
 # Calculate percent protection for each PU and update status (protected or not)
 mr <-
@@ -93,7 +98,7 @@ rm(b1,b2,mr, mr_union)
 pus %>% mutate(status_0.5 = 0) -> pus
 pus$status_0.5[which(pus$perc_prot>0.5)] <- 1
 
-# NUmber of protected PUs and area protected by those, according to different thresholds
+# Number of protected PUs and area protected by those, according to different thresholds
 pus %>% filter(status_0==1) %>% pull(area_prot) %>% length
 pus %>% filter(status_0.01==1) %>% pull(area_prot) %>% length
 pus %>% filter(status_0.1==1) %>% pull(area_prot) %>% length
@@ -103,6 +108,46 @@ pus %>% filter(status_0.01==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 pus %>% filter(status_0.1==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 pus %>% filter(status_0.5==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 
+
+
+################################################################################
+# Import conservation costs
+################################################################################
+
+# Read shapefile and values 
+grid <- st_read(paste0(getwd(),"/data/Mazor et al 2014 Opportunity costs/GridMEDSEA_Clip_etrs89.shp"))
+values <- read.csv(paste0(getwd(),"/data/Mazor et al 2014 Opportunity costs/CombinedCostSenario7.csv"),sep=";")
+
+# Join values to the sf
+grid %>% 
+    left_join(values,by="id") %>% 
+    select(id,cost) %>% 
+    st_transform(st_crs(pus)) -> 
+    grid
+
+# Intersect the two datasets and calculate the area of each intersection
+st_intersection(pus, grid) %>% 
+    mutate(AREA = st_area(.)) %>% 
+    select(ID, AREA, cost.1) -> 
+    intersection
+
+# Calculate the mean cost as weighted means, the weights are the areas
+intersection %>% 
+    mutate(AREA_NUM = as.numeric(AREA)) %>% 
+    group_by(ID) %>% 
+    st_drop_geometry() %>% 
+    summarise(mean_cost = weighted.mean(cost.1,AREA_NUM)) ->
+    mean_cost
+
+# Join the mean costs to the PUs
+left_join(pus, mean_cost, by = "ID") -> pus
+
+# Calculate coordinates of the centroid of each PU
+pus %>%
+    st_geometry() %>%
+    st_centroid() %>%
+    st_coordinates() -> pus_centroid
+
 # Save
-save(pus,file="Planning_units.RData")
+save(pus,pus_centroid,file="Planning_units.RData")
 
