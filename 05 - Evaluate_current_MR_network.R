@@ -16,7 +16,7 @@ load("Planning_units.RData")
 #####################################################################################
 # Prioritizr, targets met 
 #####################################################################################
-load(paste0("Results_prioritizr_",species,".RData"))
+load(paste0(getwd(),"/Results/Results_prioritizr_",species,".RData"))
 rm(results)
 
 # For each scenario, I analyze whether the other scenarios meet its target,by calculating relative targets over conservation features
@@ -60,7 +60,7 @@ eval_target_coverage_summary(prob_species_occurrence,
 #####################################################################################
 # Raptr
 #####################################################################################
-load(paste0("Results_raptr_",species,".RData"))
+load(paste0(getwd(),"/Results/Results_raptr_",species,".RData"))
 
 selections <- which(pus$status_0 == 1)
 list_space_held <- list()

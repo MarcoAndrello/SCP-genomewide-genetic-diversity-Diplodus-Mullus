@@ -1,7 +1,8 @@
 # Scenarios prioritizr
 rm(list=ls())
 
-species <- "Mullus"
+# Here set the species you want to work on: "Diplodus" or "Mullus"
+species <- "Diplodus"
 
 library(tidyverse)
 library(sf)
@@ -12,14 +13,14 @@ library(rgeoda)
 
 if (species == "Diplodus") {
     name_species = "Diplodus_sargus"
-    genetic_raster = "/Results May_2023/Diplodus_allAxes_8068.grd"
+    genetic_raster = "/Results/Diplodus_allAxes_8068.grd"
     name_species_feat = "Diplodus_a"
     num_axes = 17
     v.num_classes.multi = c(2,5)
 }
 if (species == "Mullus") {
     name_species = "Mullus_surmuletus"
-    genetic_raster = "/Results May_2023/Mullus_allAxes_2753.grd"
+    genetic_raster = "/Results/Mullus_allAxes_2753.grd"
     name_species_feat = "Mullus_a"
     num_axes = 26
     v.num_classes.multi = c(3,7)
@@ -143,4 +144,4 @@ names(problems) <- names(results) <-
 
 save(problems,
      results,
-     file=paste0("Results_prioritizr_",species,".RData"))
+     file=paste0(getwd(),"/Results/Results_prioritizr_",species,".RData"))

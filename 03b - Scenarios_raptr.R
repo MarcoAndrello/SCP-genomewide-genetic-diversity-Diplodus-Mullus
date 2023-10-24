@@ -1,7 +1,8 @@
 # Scenarios raptr
 rm(list=ls())
 
-species <- "Mullus"
+# Here set the species you want to work on: "Diplodus" or "Mullus"
+species <- "Diplodus"
 
 library(tidyverse)
 library(sf)
@@ -13,13 +14,13 @@ library(DescTools)
 
 if (species == "Diplodus") {
     name_species = "Diplodus_sargus"
-    genetic_raster = "/Results May_2023/Diplodus_allAxes_8068.grd"
+    genetic_raster = "/Results/Diplodus_allAxes_8068.grd"
     name_species_feat = "Diplodus_a"
     num_axes = 17
 }
 if (species == "Mullus") {
     name_species = "Mullus_surmuletus"
-    genetic_raster = "/Results May_2023/Mullus_allAxes_2753.grd"
+    genetic_raster = "/Results/Mullus_allAxes_2753.grd"
     name_species_feat = "Mullus_a"
     num_axes = 26
 }
@@ -127,65 +128,10 @@ for (i.class_method in 1 : 4){
         i.scen <- i.scen + 1
     }
 }
-save(prob_single,res_single,file=paste0("Results_raptr_Mullus_PARTIAL_",i.scen,".RData"))
-
 
 ################################################################################
 # Combining PCA axes to define genetic spaces
 ################################################################################
-# # Using kmeans
-# v.num_classes <- c(3,6,12)
-# attribute.spaces <- list()
-# prob_multi <- res_multi <- list()
-# i.num_classes <- 1
-# for (i.num_classes in 1 : 3){
-#     num_classes <- v.num_classes[i.num_classes]
-#     res_split.taxon <- split.taxon.multi(x = g_rast_values[,1:num_axes],
-#                                    num_classes = num_classes,
-#                                    rij_taxon = pull(pus,name_species),
-#                                    name_feat = paste0(species,"_m",num_axes),
-#                                    return_class_midpoint = T)
-#     coords <- as.matrix(res_split.taxon[[1]]) # Centroids of each clusters in the num_axes dimensions
-#     st_matrix <- res_split.taxon[[2]]
-#     weights <- colSums(st_matrix)/sum(st_matrix) # Weighting DP by the proportion of PU in the class they represent
-#     id0 <- which(weights==0)
-#     if (length(id0) > 0) {
-#         coords <- matrix(coords[-id0,],ncol=1)
-#         weights <- weights[-id0]
-#         cat("remove",length(id0),"DP from",num_classes,"\n")
-#     }
-#     dp <- DemandPoints(coords, weights)
-#     genetic_spaces <- list(AttributeSpace(planning.unit.points = PlanningUnitPoints(coords=as.matrix(species_coord[,1:num_axes]),
-#                                                                                     ids=pu.species.probabilities$pu), # only occupied PUs
-#                                           demand.points = dp,
-#                                           species=1L))
-#     attribute.spaces[[1]] <-
-#         AttributeSpaces(
-#             spaces = genetic_spaces,
-#             name = "genetic"
-#         )
-#     # Create targets
-#     targets <- data.frame(species = 1L,
-#                           target = as.integer(0:1),
-#                           proportion = c(0.15,0.75)
-#     )
-#     
-#     rap_data <- RapData(pu = st_drop_geometry(pus),
-#                         species = data.frame(name=name_species),
-#                         targets = targets,
-#                         pu.species.probabilities = pu.species.probabilities,
-#                         attribute.spaces = attribute.spaces,
-#                         boundary = boundary,
-#                         polygons = polygons)
-#     # Define problem and solve it
-#     ro <- RapUnreliableOpts(BLM=0)
-#     prob_multi[[i.num_classes]] <- RapUnsolved(ro, rap_data)
-#     print(maximum.targets(prob_multi[[i.num_classes]]))
-#     res_multi[[i.num_classes]] <- solve(prob_multi[[i.num_classes]],
-#                                          Threads = threads, verbose=T, NumericFocus= 3L, MIPGap=0.02, NumberSolutions=100L)
-# }
-##
-
 # Using hypervolume
 attribute.spaces <- list()
 prob_multi_hypervolume <- res_multi_hypervolume <- list()
@@ -204,7 +150,7 @@ for (i.num_dp in 1 : 3) {
                                                                                     ids=pu.species.probabilities$pu), # only occupied PUs
                                           demand.points = dp,
                                           species=1L))
-    # Attribute spacews for this axis (both species)
+    # Attribute spaces for this axis (both species)
     attribute.spaces[[1]] <-
         AttributeSpaces(
             spaces = genetic_spaces,
@@ -230,7 +176,6 @@ for (i.num_dp in 1 : 3) {
     res_multi_hypervolume[[i.num_dp]] <- solve(prob_multi_hypervolume[[i.num_dp]],
                                                Threads = threads, verbose=T, NumericFocus= 3L, MIPGap=0.02, NumberSolutions=100L)
 }
-save(prob_multi_hypervolume,res_multi_hypervolume,file="Results_raptr_Mullus_PARTIAL_HYPERVOLUME.RData")
 
 ###
 
@@ -252,5 +197,5 @@ names(problems) <- names(results) <-
      "multi_hypervolume_80")
 save(problems,
      results,
-     file=paste0("Results_raptr_",species,".RData")
+     file=paste0(getwd(),"/Results/Results_raptr_",species,".RData")
 )
