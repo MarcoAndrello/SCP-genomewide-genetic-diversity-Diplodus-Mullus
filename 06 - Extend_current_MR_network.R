@@ -11,6 +11,7 @@ library(rgeoda)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(tmap)
+library(RColorBrewer)
 
 library(prioritizr)
 
@@ -86,23 +87,24 @@ for (i.class_method in 1 : length(v.class_method)) {
 
 # Multiple PCA axes
 prob_multi <- res_multi <- list()
+i.num_classes <- 1
 for (i.num_classes in 1 : 2){
     pus %>% 
         select(Diplodus_sargus, Mullus_surmuletus, cost, status_0, mean_cost) -> 
         pus_split.taxon
     # Diplodus
     num_classes <- c(2,5)[i.num_classes]
-    st_matrix <- split.taxon.multi(x = g_rast_values_Diplodus[,1:num_axes],
+    st_matrix <- split.taxon.multi(x = g_rast_values_Diplodus[,1:17],
                                    num_classes = num_classes,
-                                   rij_taxon = pull(pus,name_species),
-                                   name_feat = paste0(species,"_m",num_axes))
+                                   rij_taxon = pull(pus,"Diplodus_sargus"),
+                                   name_feat = paste0("Diplodus_m17"))
     pus_split.taxon <- cbind(pus_split.taxon, st_matrix)
     # Mullus
     num_classes <- c(3,7)[i.num_classes]
-    st_matrix <- split.taxon.multi(x = g_rast_values_Mullus[,1:num_axes],
+    st_matrix <- split.taxon.multi(x = g_rast_values_Mullus[,1:26],
                                    num_classes = num_classes,
-                                   rij_taxon = pull(pus,name_species),
-                                   name_feat = paste0(species,"_m",num_axes))
+                                   rij_taxon = pull(pus,"Mullus_surmuletus"),
+                                   name_feat = paste0("Mullus_m26"))
     pus_split.taxon <- cbind(pus_split.taxon, st_matrix)
     # Feature names
     features <- names(pus_split.taxon)[c(grep("Diplodus_m",names(pus_split.taxon)),
@@ -119,50 +121,85 @@ for (i.num_classes in 1 : 2){
     res_multi[[i.num_classes]] <- solve(prob_multi[[i.num_classes]], run_checks=F)
 }
 
-
+prob <- c(prob, prob_multi)
+res <- c(res, res_multi)
+names(prob) <- names(res) <- 
+    c("single_quantile_3",
+      "single_quantile_6",
+      "single_quantile_12",
+      "single_equal_3",
+      "single_equal_6",
+      "single_equal_12",
+      "single_natural_3",
+      "single_natural_6",
+      "single_natural_12",
+      "single_sd_6",
+      "multi_kmeans_low",
+      "multi_kmeans_high")
 
 # Evaluate targets, n and cost
-eval_target_coverage_summary(prob,res["solution_1"]) %>%
-    filter(relative_target > 0) %>%
-    pull(relative_held) %>% hist
-eval_n_summary(prob,res["solution_1"])
-eval_cost_summary(prob,res["solution_1"])
+n <- cost <- vector()
+for (i.prob in 1 : length(prob)) {
+    n[i.prob] <- 
+        eval_n_summary(prob[[i.prob]],res[[i.prob]]["solution_1"]) %>% pull(n)
+    cost[i.prob] <- 
+        eval_cost_summary(prob[[i.prob]],res[[i.prob]]["solution_1"]) %>% pull(cost)
+}
 
-# Plot solution
-# Convert to factor for better plotting
-res$solution_1_fac <- res$solution_1
-res$solution_1_fac[which(is.na(res$solution_1_fac))] <- 0
-res$solution_1_fac[which(res$solution_1_fac==0)] <- "not selected"
-res$solution_1_fac[which(res$solution_1_fac==1)] <- "selected"
-res$solution_1_fac[which(res$status_0==1)] <- "existing MR"
-res$solution_1_fac <- factor(res$solution_1_fac,levels=,c("existing MR","not selected","selected"))
-# res$status_0_fac <- res$status_0
-# res$status_0_fac[which(res$status_0_fac == 0)] <- NA
-# res$status_0_fac <- factor(res$status_0_fac)
-ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(res)) -> countries
+res[[1]] %>% select(Diplodus_sargus, Mullus_surmuletus, status_0, mean_cost, solution_1) -> results
+res[[2]]$solution_1 -> results$solution_2
+res[[3]]$solution_1 -> results$solution_3
+res[[4]]$solution_1 -> results$solution_4
+res[[5]]$solution_1 -> results$solution_5
+res[[6]]$solution_1 -> results$solution_6
+res[[7]]$solution_1 -> results$solution_7
+res[[8]]$solution_1 -> results$solution_8
+res[[9]]$solution_1 -> results$solution_9
+res[[10]]$solution_1 -> results$solution_10
+res[[11]]$solution_1 -> results$solution_11
+res[[12]]$solution_1 -> results$solution_12
+results %>% mutate(sel_frequency =
+                       (solution_1 +
+                       solution_2 +
+                       solution_3 +
+                       solution_4 +
+                       solution_5 +
+                       solution_6 +
+                       solution_7 +
+                       solution_8 +
+                       solution_9 +
+                       solution_10 +
+                       solution_11 +
+                       solution_12) / 12) -> results
+
+# Assign dummy value to locked_in PUs
+results$sel_frequency %>% cut(breaks=seq(0,1,0.2),include.lowest=T,right=F) -> results$sel_frequency_fac                      
+summary(results$sel_frequency_fac)
+results$selection_frequency <- factor(results$sel_frequency_fac,
+                                      levels = c("Existing",levels(results$sel_frequency_fac)))
+results$selection_frequency[results$status_0 == 1] <- "Existing"
+summary(results$selection_frequency)
+
+ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(results)) -> countries
 png("Map_prioritizr_twospecies.png",width=20,height=12,res=300,units="cm")
-tm_shape(res) +
-    tm_fill("solution_1_fac", palette=c("blue","gray","red"), legend.is.portrait = F) +
-    tm_legend(legend.outside = T, legend.outside.position = "bottom", legend.titl) +
+tm_shape(results) +
+    tm_fill("selection_frequency", palette=c("gold",brewer.pal(5,"Greens")), legend.is.portrait = F) +
+    tm_legend(legend.outside = T, legend.outside.position = "bottom") +
     tm_shape(countries, bbox = res) +
     tm_polygons(col="lightgray")
 dev.off()
 
-### why locked_in PUs are not in the solution ???
-# res %>% filter(status_0 == 1) %>% select(Mullus_surmuletus, mean_cost, status_0, solution_1) %>% print(n=500)
-# res %>% filter(status_0 == 1) %>% select(Diplodus_sargus, mean_cost, status_0, solution_1) %>% boxplot(mean_cost ~ solution_1,data=.)
-# res %>% st_drop_geometry %>% select(paste0("solution_",c(1:100))) %>% rowSums(na.rm=T) -> res$selection_frequency
-# ne_countries(returnclass = "sf") %>% st_transform(st_crs(res)) -> countries
-# ne_coastline(scale = 50, returnclass = "sf") %>% st_transform(st_crs(res)) -> coastline
-# plot(st_geometry(coastline),extent=res)
-# plot(res["selection_frequency"], border=NA, add=T)
+n / 551
+cost / 1047296
+par(mar=c(5,4,2,2))
+barplot(n, names.arg=names(prob),las=2,cex.names=0.75,cex.axis=0.75,
+        main="Number of PUs", ylab="Number")
+abline(h=551,lty=2)
+barplot(cost, names.arg=names(prob),las=2,cex.names=0.75,cex.axis=0.75,
+        main="Conservation cost", ylab="Thousand of euros")
+abline(h=1047296,lty=2)
 
-# # Replacement importance
-# replacement_importance <- eval_replacement_importance(prob,res["solution_1"], run_checks=F)
-# save(replacement_importance,file=paste0("Replacement_importance_twospecies.RData"))
-
-
-# Comparison with speices-only SCP
+# Comparison with species-only SCP
 prob_so <- problem(pus,
                 features = c("Diplodus_sargus","Mullus_surmuletus"),
                 cost_column = "mean_cost") %>%
@@ -179,6 +216,13 @@ eval_n_summary(prob_so,res_so["solution_1"])
 eval_cost_summary(prob_so,res_so["solution_1"])
 
 # Does species-only SCP reach targets for genetic SCP?
-eval_target_coverage_summary(prob,res_so["solution_1"]) %>%
-    pull(relative_held) %>%
-    sort
+n_met <- percent_met <- vector()
+for (i.prob in 1 : 12) {
+    eval_target_coverage_summary(prob[[i.prob]],res_so["solution_1"]) %>%
+    pull(met) %>% which %>% length -> n_met[i.prob]
+    eval_target_coverage_summary(prob[[i.prob]],res_so["solution_1"]) %>%
+        filter(relative_target > 0) %>% nrow -> n_cf
+    percent_met[i.prob] <- n_met[i.prob] / n_cf
+}
+
+    
