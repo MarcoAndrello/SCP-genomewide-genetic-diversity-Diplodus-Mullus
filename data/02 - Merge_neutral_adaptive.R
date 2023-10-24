@@ -1,12 +1,32 @@
 library(vcfR)
 library(adegenet)
 
+# Get the original data
+# The original datasets are the following four vcf files for neutral and outlier loci produced by Boulanger et al (2022):
+
+# dip_neutral_7655.vcf.gz
+# dip_adaptive_413.vcf.gz
+# mul_neutral_2462.vcf.gz
+# mul_adaptive_291.vcf.gz
+
+# These four files can be downloaded freely from the DRYAD repository of the Boulanger et al (2022) paper:
+# https://doi.org/10.5061/dryad.ffbg79cvs
+###
+
+# Then put the files in your working directory 
+
+# de-comment the species you want to work on:
+
 # Diplodus
 # a_vcf <- read.vcfR("dip_neutral_7655.vcf.gz")
 # b_vcf <- read.vcfR("dip_adaptive_413.vcf.gz")
+
 # Mullus
-a_vcf <- read.vcfR("mul_neutral_2462.vcf.gz")
-b_vcf <- read.vcfR("mul_adaptive_291.vcf.gz")
+# a_vcf <- read.vcfR("mul_neutral_2462.vcf.gz")
+# b_vcf <- read.vcfR("mul_adaptive_291.vcf.gz")
+
+###
+
 a <- vcfR2genind(a_vcf)
 b <- vcfR2genind(b_vcf)
 
