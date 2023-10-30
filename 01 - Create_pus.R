@@ -117,7 +117,8 @@ pus %>% filter(status_0.5==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 # Import conservation costs
 ################################################################################
 
-# Read shapefile and values 
+# Read shapefile and values
+# The orginal files are available upon request from Tessa Mazor: t.mazor@uq.edu.au or Sylvaine Giakoumi: sylvaine.giakoumi@szn.it
 grid <- st_read(paste0(getwd(),"/data/Mazor et al 2014 Opportunity costs/GridMEDSEA_Clip_etrs89.shp"))
 values <- read.csv(paste0(getwd(),"/data/Mazor et al 2014 Opportunity costs/CombinedCostSenario7.csv"),sep=";")
 
