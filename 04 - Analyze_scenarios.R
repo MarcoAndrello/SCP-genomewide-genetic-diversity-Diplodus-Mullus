@@ -5,7 +5,7 @@
 
 rm(list=ls())
 
-species <- "Diplodus"
+species <- "Mullus"
 
 library(tidyverse)
 library(sf)
@@ -110,6 +110,7 @@ data.frame(space_held = space_held_solution,
     
 space_held <- bind_rows(list_space_held)
 space_held$solution <- factor(space_held$solution, levels=c(names(results),"raptr"))
+save(space_held, file="space_held_mullus.RData")
 
 # Plot
 theme_set(theme_classic())
@@ -158,7 +159,7 @@ cost$solution <- factor(cost$solution, levels=c(names(results),"raptr"))
 
 # Number of cells and cost required to protect the species distribution only
 n_species_distribution <- ifelse(species == "Diplodus", 338, 542) # before was 340, 544
-cost_species_distribution ### fare scenario con prioritizr
+#cost_species_distribution ### fare scenario con prioritizr
 
 
 # Plot
