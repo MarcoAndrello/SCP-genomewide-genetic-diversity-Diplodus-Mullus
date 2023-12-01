@@ -111,7 +111,9 @@ pus %>% filter(status_0.01==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 pus %>% filter(status_0.1==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 pus %>% filter(status_0.5==1) %>% pull(area_prot) %>% sum %>% set_units("km^2")
 
-
+# Set the main column "status" to the values in status_0
+# This means we are being very conservative: we consider a PU as protected even if a tiny portion of it is effectively protected
+pus %>% mutate(status = as.integer(status_0)) -> pus
 
 ################################################################################
 # Import conservation costs
@@ -144,7 +146,12 @@ intersection %>%
     mean_cost
 
 # Join the mean costs to the PUs
-left_join(pus, mean_cost, by = "ID") -> pus
+left_join(pus, mean_cost, by = "ID") %>%
+    mutate(cost=mean_cost/1000) %>% # divide by 1000 to avoid numerical issues
+    select(-mean_cost) -> pus
+
+# Remove PUs with no cost data (13 PUs)
+pus %>% drop_na(cost) -> pus
 
 # Calculate coordinates of the centroid of each PU
 pus %>%

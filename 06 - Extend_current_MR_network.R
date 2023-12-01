@@ -25,7 +25,7 @@ source(paste0(getwd(),"/functions/split.taxon.R"))
 load("Planning_units.RData")
 
 # Rescale mean cost to avoid numerical issues
-pus$mean_cost <- pus$mean_cost / 1000
+# pus$mean_cost <- pus$mean_cost / 1000
 
 g_rast <- rast(paste0(getwd(),"/Results May_2023/Diplodus_allAxes_8068.grd"))
 g_rast_values_Diplodus <- terra::extract(g_rast,pus_centroid)

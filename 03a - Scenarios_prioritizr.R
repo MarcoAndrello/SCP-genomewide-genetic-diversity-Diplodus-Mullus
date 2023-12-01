@@ -2,7 +2,7 @@
 rm(list=ls())
 
 # Here set the species you want to work on: "Diplodus" or "Mullus"
-species <- "Diplodus"
+species <- "Mullus"
 
 library(tidyverse)
 library(sf)
@@ -70,6 +70,7 @@ v.class_method <- c("quantile","equal","natural","stddev")
 v.num_classes <- c(3,6,12)
 prob_single <- res_single <- list()
 i.scen <- 1
+i.class_method <- i.num_classes <- 1
 for (i.class_method in 1 : 4){
     class_method <- v.class_method[i.class_method]
     for (i.num_classes in 1 : 3){
@@ -94,6 +95,7 @@ for (i.class_method in 1 : 4){
             add_min_set_objective() %>%
             add_relative_targets(0.15) %>%
             add_binary_decisions() %>%
+            add_locked_in_constraints(which(pus_split.taxon$status==1)) %>%
             add_gap_portfolio(number_solutions = 100, pool_gap = 0.02) %>%
             add_gurobi_solver(gap=0.02, threads=threads)
         res_single[[i.scen]] <- solve(prob_single[[i.scen]], run_checks=F)
@@ -115,16 +117,16 @@ for (i.num_classes in 1 : 2){
     pus_split.taxon <- cbind(pus, st_matrix)
     ## Solve problem
     features <- names(pus_split.taxon)[grep(paste0(species,"_m",num_axes),names(pus_split.taxon))]
-    p <- problem(pus_split.taxon,
-                 features = features,
-                 cost_column = "cost") %>%
+    prob_multi[[i.num_classes]] <- problem(pus_split.taxon,
+                                           features = features,
+                                           cost_column = "cost") %>%
         add_min_set_objective() %>%
         add_relative_targets(0.15) %>%
         add_binary_decisions() %>%
+        add_locked_in_constraints(which(pus_split.taxon$status==1)) %>%
         add_gap_portfolio(number_solutions = 100, pool_gap = 0.02) %>%
         add_gurobi_solver(gap=0.02, threads=threads)
-    prob_multi[[i.num_classes]] <- p
-    res_multi[[i.num_classes]] <- solve(p, run_checks=F)
+    res_multi[[i.num_classes]] <- solve(prob_multi[[i.num_classes]], run_checks=F)
 }
 
 problems <- c(prob_single,prob_multi)
