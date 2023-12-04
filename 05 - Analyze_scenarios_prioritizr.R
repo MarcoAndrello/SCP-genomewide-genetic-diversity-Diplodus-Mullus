@@ -5,18 +5,15 @@
 
 rm(list=ls())
 
-species <- "Mullus"
-
 library(tidyverse)
 library(sf)
 library(ade4)
 library(vegan)
 library(prioritizr)
 library(raptr)
-# library(gridExtra)
 
-load(paste0(getwd(),"/Results/Results_prioritizr_",species,".RData"))
-load(paste0(getwd(),"/Results/Results_raptr_",species,".RData")) # res_gs
+load(paste0(getwd(),"/Results/Results_prioritizr.RData"))
+load(paste0(getwd(),"/Results/Results_raptr.RData"))
 
 
 #####################################################################################
@@ -30,7 +27,7 @@ jaccard_distance <- pvalue <- array(NA,dim=c(length(results)+1,length(results)+1
 dimnames(jaccard_distance) <- dimnames(pvalue) <- list("1" = c(names(results),"raptr"), "2" = c(names(results),"raptr"))
 
 par(mar=c(1,1,4,1),mfrow=c(4,4))
-# i.res <- 1; j.res <- 13
+i.res <- 1; j.res <- 13
 for (i.res in 1 : length(results)) {
     for (j.res in (i.res+1) : (length(results)+1) ) {
         cat(i.res,j.res,"\n"); flush.console()
@@ -43,8 +40,11 @@ for (i.res in 1 : length(results)) {
             }
         )
         selection_frequency_1 <- rowSums(twogroups[,1:100]) / 100
-        selection_frequency_2 <- rowSums(twogroups[,101:200]) / 100
+        selection_frequency_2 <- if(j.res < 13) rowSums(twogroups[,101:200])/100 else twogroups[,101]
         vegdist(rbind(selection_frequency_1,selection_frequency_2),method="jaccard") %>% as.numeric() -> distance_observed
+        jaccard_distance[i.res,j.res] <- distance_observed
+        
+        if(j.res == 13) next
         # Permute columns
         num_perm <- 1000
         distance_permuted <- rep(NA,num_perm)
@@ -63,18 +63,18 @@ for (i.res in 1 : length(results)) {
              xlim=c(min(distance_permuted),
                     max((distance_observed+1), max(distance_permuted))))
         abline(v=distance_observed,col="red")
-        jaccard_distance[i.res,j.res] <- distance_observed
+        
         pvalue[i.res,j.res] <- 1 - (ecdf(distance_permuted)(distance_observed))
     }
 }
+save(jaccard_distance, pvalue, file=paste0(getwd(),"/Results/Jaccard_distance.RData"))
 
-save(jaccard_distance, pvalue, file=paste0(getwd(),"/Results/Jaccard_distance_",species,".RData"))
 # Plot a tree showing distances between solutions
-load(paste0(getwd(),"/Results/Jaccard_distance_",species,".RData"))
+load(paste0(getwd(),"/Results/Jaccard_distance.RData"))
 hc <- hclust(as.dist(t(jaccard_distance)))
-png(paste0("Figures/hclust_prioritizr_",species,".png"),width=9,height=15,units="cm",res=300)
+png(paste0("Figures/hclust.png"),width=11,height=15,units="cm",res=300)
 par(mar=c(1,4,2,1))
-plot(hc,main=paste("prioritizr",species),xlab="",sub="")
+plot(hc,main="Distance between solutions",xlab="",sub="")
 dev.off()
 
 
@@ -85,7 +85,7 @@ dev.off()
 list_space_held <- list()
 # Solutions found with prioritizr
 for (i.prob in 1 : length(results)) { 
-    space_held_solution <- vector()
+    space_held_Diplodus <- space_held_Mullus <- vector()
     for (i.sol in 1 : 100) {
         if (i.sol %% 25 == 0) {
             cat(i.prob,i.sol,"\n");
@@ -93,20 +93,25 @@ for (i.prob in 1 : length(results)) {
         }
         selections <- which(results[[i.prob]] %>% pull(paste0("solution_",i.sol))==1)
         res_updated <- update(res_gs, b = selections)
-        space_held_solution[i.sol] <- space.held(res_updated, y=1, space=NULL) %>% as.vector()
+        space_held_Diplodus[i.sol] <- space.held(res_updated, y=1, species=1) %>% as.vector()
+        space_held_Mullus[i.sol] <- space.held(res_updated, y=1, species=2) %>% as.vector()
     }
-    data.frame(space_held = space_held_solution,
+    data.frame(space_held_Diplodus = space_held_Diplodus,
+               space_held_Mullus = space_held_Mullus,
                solution = names(problems)[[i.prob]],
                sol = as.integer(1:100)) ->
         list_space_held[[i.prob]]
 }
 
-# Solutions found with raptr
-space_held_solution <- space.held(res_gs, y=NULL,space=NULL) %>% as.vector()
-data.frame(space_held = space_held_solution,
-           solution = "raptr",
-           sol = as.integer(1:100)) ->
-    list_space_held[[13]]
+#### MI FERMO QUI: FARE IL SPACE_HELD SOLUTIONS
+
+# # Solutions found with raptr
+# space_held_Diplodus <- space.held(res_gs, y=1, species=1) %>% as.vector()
+# space_held_Mullus <- space.held(res_gs, y=1, species=1) %>% as.vector()
+# data.frame(space_held = space_held_solution,
+#            solution = "raptr",
+#            sol = as.integer(1:100)) ->
+#     list_space_held[[13]]
     
 space_held <- bind_rows(list_space_held)
 space_held$solution <- factor(space_held$solution, levels=c(names(results),"raptr"))
