@@ -103,7 +103,6 @@ for (i.prob in 1 : length(results)) {
         list_space_held[[i.prob]]
 }
 
-#### MI FERMO QUI: FARE IL SPACE_HELD SOLUTIONS
 
 # # Solutions found with raptr
 # space_held_Diplodus <- space.held(res_gs, y=1, species=1) %>% as.vector()
@@ -114,19 +113,21 @@ for (i.prob in 1 : length(results)) {
 #     list_space_held[[13]]
     
 space_held <- bind_rows(list_space_held)
-space_held$solution <- factor(space_held$solution, levels=c(names(results),"raptr"))
-save(space_held, file="space_held_mullus.RData")
+space_held$solution <- factor(space_held$solution, levels=names(results))
+save(space_held, file="Results/Space_held.RData")
 
 # Plot
+load("Results/Space_held.RData")
+space_held %>% rename(Diplodus = space_held_Diplodus, Mullus = space_held_Mullus) %>% 
+    pivot_longer(cols=c(Diplodus, Mullus)) %>%
+    rename(species=name, space_held=value) -> space_held
 theme_set(theme_classic())
-png(paste0("Figures/Space_held_",species,".png"),width=15,height=10,units="cm",res=300)
+png(paste0("Figures/Space_held.png"),width=15,height=10,units="cm",res=300)
 ggplot(space_held) +
-    geom_boxplot(aes(x=solution, y=space_held)) +
-    # geom_violin(aes(x=solution, y=space_held), fill="black") #+
+    geom_boxplot(aes(x=solution, y=space_held, fill=species, colour=species)) +
     theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-    ylim(0.7,1) +
-    geom_hline(yintercept=0.75, linetype = "dotted") +
-    ggtitle(species)
+    ylim(0.85,1) +
+    geom_hline(yintercept=0.95, linetype = "dotted")
 dev.off()
 
 
@@ -153,49 +154,50 @@ for (i.prob in 1 : length(problems) ) {
         list_cost[[i.prob]]
 }
 # Cost of raptr solutions
-cost_solution <- res_gs@results@summary$Cost
-data.frame(cost = cost_solution,
-           solution = "raptr",
-           sol = as.integer(1:100)) ->
-    list_cost[[13]]
+# cost_solution <- res_gs@results@summary$Cost
+# data.frame(cost = cost_solution,
+#            solution = "raptr",
+#            sol = as.integer(1:100)) ->
+#     list_cost[[13]]
 
 cost <- bind_rows(list_cost)
-cost$solution <- factor(cost$solution, levels=c(names(results),"raptr"))
+cost$solution <- factor(cost$solution, levels=names(results))
+cost$cost <- cost$cost / 1000 # transforms kilo-euro into Million-euros
 
 # Number of cells and cost required to protect the species distribution only
-n_species_distribution <- ifelse(species == "Diplodus", 338, 542) # before was 340, 544
-#cost_species_distribution ### fare scenario con prioritizr
+# n_species_distribution <- ifelse(species == "Diplodus", 338, 542) # before was 340, 544
 
 
 # Plot
 theme_set(theme_classic())
-png(paste0("Figures/Cost_",species,".png"),width=15,height=10,units="cm",res=300)
+png(paste0("Figures/Cost.png"),width=15,height=10,units="cm",res=300)
 ggplot(cost) +
     geom_boxplot(aes(x=solution, y=cost)) +
     theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-    # geom_hline(yintercept=cost_species_distribution,linetype="dotted") +
-    ggtitle(species) + ylab("Cost (k€)")
+    geom_hline(yintercept=1046,linetype="dotted") +
+    geom_hline(yintercept=982,linetype="dashed") +
+    ylab("Cost (M€)")
 dev.off()
 
 
-## Significant differences?
-## Define method and num_classes column
-cost$method = c(rep("quantile",100*3),
-                rep("equal",100*3),
-                rep("natural",100*3),
-                rep("sd",100*1),
-                rep("kmeans",100*2),
-                rep("raptr",100*1)
-)
-cost$method = factor(cost$method,
-                                 levels=c("quantile","equal","natural","sd","kmeans","raptr"))
-cost$num_classes=c(rep(
-    rep(c("low","medium","high"),each=100),
-    3),
-    rep("medium",100),
-    rep("low",100),
-    rep("high",100),
-    rep("raptr-gs",100)
-)
-cost$num_classes = factor(cost$num_classes,levels=c("low","medium","high","raptr-gs"))
-mod <- lm(cost~method*num_classes,data=cost)
+# ## Significant differences?
+# ## Define method and num_classes column
+# cost$method = c(rep("quantile",100*3),
+#                 rep("equal",100*3),
+#                 rep("natural",100*3),
+#                 rep("sd",100*1),
+#                 rep("kmeans",100*2),
+#                 rep("raptr",100*1)
+# )
+# cost$method = factor(cost$method,
+#                                  levels=c("quantile","equal","natural","sd","kmeans","raptr"))
+# cost$num_classes=c(rep(
+#     rep(c("low","medium","high"),each=100),
+#     3),
+#     rep("medium",100),
+#     rep("low",100),
+#     rep("high",100),
+#     rep("raptr-gs",100)
+# )
+# cost$num_classes = factor(cost$num_classes,levels=c("low","medium","high","raptr-gs"))
+# mod <- lm(cost~method*num_classes,data=cost)
