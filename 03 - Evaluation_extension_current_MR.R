@@ -182,12 +182,13 @@ save(space_held_Diplodus,
 ################################################################################
 # Extension of the current MR set: amount + space targets (with raptr)
 ################################################################################
-res_gs <- solve(prob_gs, Threads = threads, verbose=T, NumericFocus= 3L,
+tic()
+res_gs <- solve(prob_gs, Threads = 1L, verbose=T, NumericFocus= 3L,
                 MIPGap=0.02, NumberSolutions=100L)
-# space.held(res_gs, y=NULL)
-# amount.held(res_gs, y=NULL)
+toc()
+space.held(res_gs, y=NULL)
+amount.held(res_gs, y=NULL)
 # spp.plot(res_gs, species=1, y=1) #, pu.color.palette = c("grey30", "green", "red", "red"))
-
 
 save(prob_gs,
      res_gs,
