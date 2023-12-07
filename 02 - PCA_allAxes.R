@@ -45,7 +45,7 @@ save(Diplodus_coord,file="Diplodus_coord.RData")
 # Add spatial coordinates
 other(xpop)$xy <- Diplodus_coord 
 names(other(xpop)$xy) <- c("x","y")
-
+save(xpop,file="Data_for_PCA_Diplodus.RData")
 # Perform PCA
 pca <- dudi.pca(xpop)
 save(pca,file=paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))

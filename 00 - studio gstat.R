@@ -64,3 +64,50 @@ perf <- 1 - (mean(rmse) / null)
 round(perf, 3)
 ## [1] 0.558
 
+
+library(gstat)
+d <- data.frame(geom(dta)[,c("x", "y")], as.data.frame(dta))
+head(d)
+gs <- gstat(formula=prec~1, locations=~x+y, data=d, nmax=5, set=list(idp = 0))
+nn <- interpolate(r, gs, debug.level=0)
+nnmsk <- mask(nn, vr)
+plot(nnmsk, 1)
+
+rmsenn <- rep(NA, 5)
+for (k in 1:5) {
+    test <- d[kf == k, ]
+    train <- d[kf != k, ]
+    gscv <- gstat(formula=prec~1, locations=~x+y, data=train, nmax=5, set=list(idp = 0))
+    p <- predict(gscv, test, debug.level=0)$var1.pred
+    rmsenn[k] <- RMSE(test$prec, p)
+}
+rmsenn
+mean(rmsenn)
+1 - (mean(rmsenn) / null)
+
+
+# Try MEMs
+library(spatialRF)
+library(units)
+datav %>% st_as_sf %>% st_geometry %>% st_distance %>% as.matrix %>% drop_units -> dist_mat
+mem(dist_mat)
+data$dummy <- 1
+m1 <- rf_spatial(data=data, dependent.variable.name = "pca", predictor.variable.name = "dummy",
+                distance.matrix = dist_mat, method="mem.moran.sequential")
+## Now with in-sea distance. Calculate the distance
+library(gdistance)
+# Create transition matrices based on conductance rasters
+# Load the raster of marine areas
+# This should be already a conductance layer: Coastal Sea = 1, others (land and abyss) = 0
+SeaRaster <- raster::raster("C:/Users/marco/Desktop/seamap.tif")
+# Create transition matrix and correct it for lat-long
+t <- transition(SeaRaster, function(x) mean(x), directions=8)
+t <- geoCorrection(t, type="c")
+    
+# Calculate least coast distances
+datav %>% st_as_sf %>% st_geometry %>% st_transform(st_crs(4326)) %>% st_coordinates -> fromCoords
+sea_dist <-  costDistance(t, fromCoords) 
+### guardare anche terra::costDist
+sea_dist %>% as.matrix -> sea_dist
+m2 <- rf_spatial(data=data, dependent.variable.name = "pca", predictor.variable.name = "dummy",
+                distance.matrix = sea_dist, method="mem.moran.sequential")
