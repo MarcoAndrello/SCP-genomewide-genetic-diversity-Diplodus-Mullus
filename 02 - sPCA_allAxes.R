@@ -51,30 +51,24 @@ save(xpop,file="Data_for_PCA_Diplodus.RData")
 
 # Try sPCA
 load("Data_for_PCA_Diplodus.RData")
-xpop1 <- xpop[,loc=c(1:100)]
-tic()
+xpop1 <- xpop[,loc=c(1:2000)]
+tic() # inizio 9:50 con Delaunay triangulation
 spca <- spca(xpop, type=1, plot.nb=F, scannf=F, nfposi=20, nfnega=20)
 toc()
 plot(spca,1)
 save(spca,file=paste0(getwd(),"/Results/Diplodus_spca_8068.RData"))
 
-# library(interp)
-# x <- other(xpop1)$xy[,1]
-# y <- other(xpop1)$xy[,2]
-# temp <- interp(x, y, spca$li[,1])
-# image(temp, col=azur(100))
+# # Perform PCA
+# pca <- dudi.pca(xpop)
+# save(pca,file=paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
 
-# Perform PCA
-pca <- dudi.pca(xpop)
-save(pca,file=paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
-
-# Plot PCA (biplot and screeplot)
-load(paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
-png(paste0("PCA_biplot_Diplodus.png"),width=15,height=15,units="cm",res=300)
-plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Diplodus sargus")
-dev.off()
-screeplot(pca)
-pca$eig/sum(pca$eig)
+# # Plot PCA (biplot and screeplot)
+# load(paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
+# png(paste0("PCA_biplot_Diplodus.png"),width=15,height=15,units="cm",res=300)
+# plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Diplodus sargus")
+# dev.off()
+# screeplot(pca)
+# pca$eig/sum(pca$eig)
 
 # Interpolation
 # load(paste0(getwd(),"/Results/Diplodus_pca.RData"))
@@ -87,12 +81,12 @@ obs <- st_as_sf(data.frame(pca1=0,
 obs <- st_transform(obs,crs=st_crs("ESRI:102013"))
 Diplodus_coord_Albers <- st_coordinates(obs)
 rm(obs)
-# Loop on PCA axes
+# Loop on sPCA axes
 pca_interp <- list()
 for (i.axis in 1 :ncol(pca$li)){
     if (i.axis %% 10 == 0) cat(i.axis,"\n"); flush.console()
     # Dataframe with observation (pca scores) and X and Y coord
-    data <- data.frame(pca=pca$li[,i.axis], X=Diplodus_coord_Albers[,1], Y=Diplodus_coord_Albers[,2])
+    # data <- data.frame(pca=pca$li[,i.axis], X=Diplodus_coord_Albers[,1], Y=Diplodus_coord_Albers[,2])
     data <- data.frame(pca=spca$li[,i.axis], X=Diplodus_coord_Albers[,1], Y=Diplodus_coord_Albers[,2])
     # gstat model
     gs <- gstat(formula=pca~1, locations=~X+Y, data=data, nmax=5, set=list(idp=0))
@@ -134,17 +128,6 @@ rm(match_xpop_to_cellsampling)
 save(Mullus_coord,file="Mullus_coord.RData")
 other(xpop)$xy <- Mullus_coord 
 names(other(xpop)$xy) <- c("x","y")
-
-# Try sPCA
-load("Data_for_PCA_Mullus.RData")
-tic()
-spca <- spca(xpop, type=1, plot.nb=F, scannf=F, nfposi=20, nfnega=20)
-toc()
-plot(spca,1)
-save(spca,file=paste0(getwd(),"/Results/Mullus_spca_2753.RData"))
-
-
-
 # Perform PCA
 pca <- dudi.pca(xpop)
 save(pca,file=paste0(getwd(),"/Results/Mullus_pca_pop.RData"))
