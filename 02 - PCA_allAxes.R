@@ -134,13 +134,14 @@ rm(match_xpop_to_cellsampling)
 save(Mullus_coord,file="Mullus_coord.RData")
 other(xpop)$xy <- Mullus_coord 
 names(other(xpop)$xy) <- c("x","y")
+save(xpop,file="Data_for_PCA_Mullus.RData")
 
 # Try sPCA
 load("Data_for_PCA_Mullus.RData")
 tic()
 spca <- spca(xpop, type=1, plot.nb=F, scannf=F, nfposi=20, nfnega=20)
 toc()
-plot(spca,1)
+# plot(spca,1)
 save(spca,file=paste0(getwd(),"/Results/Mullus_spca_2753.RData"))
 
 
