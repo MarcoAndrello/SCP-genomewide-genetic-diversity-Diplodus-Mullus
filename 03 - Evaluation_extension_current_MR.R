@@ -47,13 +47,13 @@ for (i.species in 1 : 2) {
         name_species = "Diplodus_sargus"
         genetic_raster = "/Results/Diplodus_allAxes_8068.grd"
         name_species_feat = "Diplodus_a"
-        num_axes = 17
+        num_axes = 14
     }
     if (species == "Mullus") {
         name_species = "Mullus_surmuletus"
         genetic_raster = "/Results/Mullus_allAxes_2753.grd"
         name_species_feat = "Mullus_a"
-        num_axes = 26
+        num_axes = 21
     }
     ## Genetic data
     g_rast <- rast(paste0(getwd(),genetic_raster))
@@ -64,7 +64,7 @@ for (i.species in 1 : 2) {
     # Create an object containing the coordinates of the occupied PU
     # in all genetic spaces (i.e. for all genetic PCA axes)(need this for planning.unit.points)
     pus_g_values <- cbind(g_rast_values, st_drop_geometry(pus))
-    names(pus_g_values)[1:ncol(g_rast_values)] <- paste0("pca",sprintf("%02d",1:ncol(g_rast_values)))
+    names(pus_g_values)[1:ncol(g_rast_values)] <- paste0("spca",sprintf("%02d",1:ncol(g_rast_values)))
     species_coord <- filter(pus_g_values, !!as.name(name_species) == 1) 
     species_coord <- species_coord[1:num_axes]
     rm(pus_g_values)
@@ -117,7 +117,6 @@ prob_gs <- RapUnsolved(ro, rap_data)
 maximum.targets(prob_gs)
 
 
-
 ################################################################################
 # Evaluation of the current MR set for both species
 ################################################################################
@@ -146,18 +145,18 @@ res_so <- solve(prob_so, run_checks=T)
 
 # Space held
 space_held_Diplodus <- space_held_Mullus <- vector()
-for (i.sol in 25 : 100) {
-    if (i.sol %% 25 == 0) {
+for (i.sol in 1 : 100) {
+    if (i.sol %% 5 == 0) {
         cat(i.sol,"\n");
         flush.console()
     }
     selections <- which(res_so %>% pull(paste0("solution_",i.sol))==1)
-    res_updated <- update(res_gs, b = selections)
+    res_updated <- update(prob_gs, b = selections)
     space_held_Diplodus[i.sol] <- space.held(res_updated, y=1, species=1) %>% as.vector()
     space_held_Mullus[i.sol] <- space.held(res_updated, y=1, species=2) %>% as.vector()
 }
-space_held_Diplodus %>% hist
-space_held_Mullus %>% hist
+space_held_Diplodus %>% summary
+space_held_Mullus %>% summary
 
 # Conservation cost
 cost_solution <- vector()
@@ -172,10 +171,12 @@ for (i.sol in 1 : 100) {
 }
 summary(cost_solution)
 
-save(space_held_Diplodus,
+save(prob_so,
+     res_so,
+     space_held_Diplodus,
      space_held_Mullus,
      cost_solution,
-     file="/Results/Results_Extension_Amount.RData")
+     file="Results/Results_Extension_Amount.RData")
 
 
 
