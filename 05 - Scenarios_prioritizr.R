@@ -26,38 +26,6 @@ g_rast <- rast(paste0(getwd(),"/Results/Mullus_allAxes_2753.grd"))
 g_rast_values[[2]] <- terra::extract(g_rast,pus_centroid)
 rm(g_rast)
 
-for (i.species in 1 : 2) {
-    
-    name_species = c("Diplodus_sargus", "Mullus_surmuletus")[i.species]
-    num_axes <- c(17, 26)[i.species]
-    
-    # Create an object containing the coordinates of the occupied PU
-    # in all genetic PCA axes: need this for finding clusters
-    pus_g_values <- cbind(g_rast_values[[i.species]], st_drop_geometry(pus))
-    names(pus_g_values)[1:ncol(g_rast_values[[i.species]])] <- paste0("pca",sprintf("%02d",1:ncol(g_rast_values[[i.species]])))
-    species_coord <- filter(pus_g_values, !!as.name(name_species) == 1)
-    species_coord <- species_coord[1:num_axes]
-    rm(pus_g_values)
-    
-    # Run kmeans with several number of clusters
-    set.seed(123)
-    wss <- vector()
-    for (i.clust in 1 : 20) {
-        clusters <- kmeans(species_coord,centers=i.clust)
-        wss[i.clust] <- clusters$tot.withinss
-    }
-    
-    # Plot k-means
-    png(paste0("Number_of_clusters_",name_species,".png"),width=10,height=10,units="cm",res=300)
-    plot(c(1:20),wss,type="l",xlab="Number of clusters",ylab="Within sum-of-squares",
-         main = name_species)
-    dev.off()
-}
-
-# For Diplodus: it suggests 5 (actually 7!!) clusters. We use K = 2 (Boulanger et al 2022) and K = 5
-# For Mullus: it suggests 7 clusters. We use K = 3 (Boulanger et al 2022) and K = 7
-
-
 
 ################################################################################
 # Using single PCA axes as conservation features
@@ -78,7 +46,7 @@ for (i.class_method in 1 : 4){
         pus %>% 
             select(Diplodus_sargus, Mullus_surmuletus, cost, status) -> 
             pus_split.taxon
-        for (i.axis in 1 : 17) {
+        for (i.axis in 1 : 14) {
             st_matrix <- split.taxon(x = g_rast_values[[1]][,i.axis],
                                      num_classes = num_classes,
                                      class_method = class_method,
@@ -87,7 +55,7 @@ for (i.class_method in 1 : 4){
             pus_split.taxon <- cbind(pus_split.taxon, st_matrix)
         }
         # Mullus surmuletus
-        for (i.axis in 1 : 26) {
+        for (i.axis in 1 : 21) {
             st_matrix <- split.taxon(x = g_rast_values[[2]][,i.axis],
                                      num_classes = num_classes,
                                      class_method = class_method,
@@ -115,6 +83,8 @@ for (i.class_method in 1 : 4){
 }
 rm(st_matrix,class_method,num_classes,i.class_method,i.num_classes,i.scen,i.axis,v.class_method)
 
+
+#### QUI DA MODIFICARE DANDO A SPLIT MULTI GIA LA CLUSTERIZZAZIONE FATTA
 ################################################################################
 # Combining PCA axes to define conservation features
 ################################################################################
@@ -128,14 +98,14 @@ for (i.num_classes in 1 : 2){
     st_matrix <- split.taxon.multi(x = g_rast_values[[1]][,1:17],
                                    num_classes = num_classes,
                                    rij_taxon = pull(pus,"Diplodus_sargus"),
-                                   name_feat = paste0("Diplodus_m17"))
+                                   name_feat = paste0("Diplodus_m14"))
     pus_split.taxon <- cbind(pus_split.taxon, st_matrix)
     # Mullus
     num_classes <- c(3,7)[i.num_classes]
     st_matrix <- split.taxon.multi(x = g_rast_values[[2]][,1:26],
                                    num_classes = num_classes,
                                    rij_taxon = pull(pus,"Mullus_surmuletus"),
-                                   name_feat = paste0("Mullus_m26"))
+                                   name_feat = paste0("Mullus_m21"))
     pus_split.taxon <- cbind(pus_split.taxon, st_matrix)
     # Feature names
     features <- names(pus_split.taxon)[c(grep("Diplodus_m",names(pus_split.taxon)),
@@ -172,3 +142,29 @@ names(problems) <- names(results) <-
 save(problems,
      results,
      file=paste0(getwd(),"/Results/Results_prioritizr.RData"))
+
+
+
+
+
+
+
+
+
+# For Diplodus: it suggests 5 (actually 7!!) clusters. We use K = 2 (Boulanger et al 2022) and K = 5
+# For Mullus: it suggests 7 clusters. We use K = 3 (Boulanger et al 2022) and K = 7
+
+# Run kmeans with several number of clusters
+set.seed(123)
+wss <- vector()
+for (i.clust in 1 : 20) {
+    # clusters <- kmeans(species_coord,centers=i.clust)
+    pam[[i.clust]] <- pam(species_coord,i.clust)
+    # wss[i.clust] <- clusters$tot.withinss
+}
+
+# Plot k-means
+png(paste0("Number_of_clusters_",name_species,".png"),width=10,height=10,units="cm",res=300)
+plot(c(1:20),wss,type="l",xlab="Number of clusters",ylab="Within sum-of-squares",
+     main = name_species)
+dev.off()
