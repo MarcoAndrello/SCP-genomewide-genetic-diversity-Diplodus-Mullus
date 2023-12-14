@@ -7,6 +7,7 @@ library(terra)
 library(raptr)
 library(prioritizr)
 library(parallel)
+library(tictoc)
 
 # Number of assigned threads
 threads <- 8L #as.integer(max(1, detectCores() - 2))
@@ -47,13 +48,13 @@ for (i.species in 1 : 2) {
         name_species = "Diplodus_sargus"
         genetic_raster = "/Results/Diplodus_allAxes_8068.grd"
         name_species_feat = "Diplodus_a"
-        num_axes = 14
+        num_axes = 17
     }
     if (species == "Mullus") {
         name_species = "Mullus_surmuletus"
         genetic_raster = "/Results/Mullus_allAxes_2753.grd"
         name_species_feat = "Mullus_a"
-        num_axes = 21
+        num_axes = 26
     }
     ## Genetic data
     g_rast <- rast(paste0(getwd(),genetic_raster))
@@ -69,7 +70,8 @@ for (i.species in 1 : 2) {
     species_coord <- species_coord[1:num_axes]
     rm(pus_g_values)
     
-    # Many PUs have the same multidimensional coordinates in the PCA space (this is due to the interpolation method)
+    # Many PUs MIGHT have the same multidimensional coordinates in the PCA space
+    # (this happens only with the nearest neighbor interpolation method)
     # Count number of PUs per multidimensional coordinate
     species_coord %>% group_by_all() %>% count -> coords
     # The number of PUs per coordinate will be the weight of that coordinate
@@ -185,7 +187,7 @@ save(prob_so,
 ################################################################################
 tic()
 res_gs <- solve(prob_gs, Threads = 1L, verbose=T, NumericFocus= 3L,
-                MIPGap=0.02, NumberSolutions=100L)
+                MIPGap=0.02, NumberSolutions=1L)
 toc()
 space.held(res_gs, y=NULL)
 amount.held(res_gs, y=NULL)
@@ -194,3 +196,28 @@ amount.held(res_gs, y=NULL)
 save(prob_gs,
      res_gs,
      file=paste0(getwd(),"/Results/Results_raptr_100PORTFOLIO.RData"))
+
+
+################################################################################
+# Approximating the genetic spaces with a lower number of demand points
+################################################################################
+# Using 50% of the demand points of the gold standard
+set.seed(20131214)
+rap_data_50 <- rap_data
+i.perm <- 1
+prob_50gs <- res_50gs <- list()
+id_Diplodus <- sample(2253,2253/2)
+id_Mullus <- sample(3613,3613/2)
+rap_data_50@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords <-
+    rap_data@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords[id_Diplodus,]
+rap_data_50@attribute.spaces[[1]]@spaces[[1]]@demand.points@weights <- rep(1/length(id_Diplodus),length(id_Diplodus))
+rap_data_50@attribute.spaces[[1]]@spaces[[2]]@demand.points@coords <-
+    rap_data@attribute.spaces[[1]]@spaces[[2]]@demand.points@coords[id_Mullus,]
+rap_data_50@attribute.spaces[[1]]@spaces[[2]]@demand.points@weights <- rep(1/length(id_Mullus),length(id_Mullus))
+
+ro <- RapUnreliableOpts(BLM=0)
+prob_50gs[[i.perm]] <- RapUnsolved(ro, rap_data_50)
+tic()
+res_50gs[[i.perm]] <- solve(prob_50gs[[i.perm]], Threads = 1L, verbose=T, NumericFocus= 3L,
+                MIPGap=0.02, NumberSolutions=1L)
+toc()
