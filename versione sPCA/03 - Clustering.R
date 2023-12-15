@@ -25,7 +25,7 @@ rm(g_rast)
 
 # https://rstudio-pubs-static.s3.amazonaws.com/375287_5021917f670c435bb0458af333716136.html
 # Diplodus sargus
-num_axes <- 14
+num_axes <- 17
 # Create an object containing the coordinates of the occupied PU
 # in all genetic PCA axes: need this for finding clusters
 pus_g_values <- cbind(g_rast_values[[1]], st_drop_geometry(pus))
@@ -43,18 +43,19 @@ clusternum <- NbClust(species_coord, distance="euclidean", method="kmeans", inde
 clusternum$Best.nc[1,] %>% table %>% sort(decreasing=T) %>% names %>% as.numeric %>% print
 save(hopkins, clusternum, file="Results/Diplodus_clustering.RData")
 # PAM clustering
+pam.res <- list()
 pam.res[[1]] <- pam(species_coord, 3,  metric = "euclidean", stand = FALSE)
-pam.res[[2]] <- pam(species_coord, 26,  metric = "euclidean", stand = FALSE)
-pam.res[[3]] <- pam(species_coord, 2,  metric = "euclidean", stand = FALSE)
+pam.res[[2]] <- pam(species_coord, 2,  metric = "euclidean", stand = FALSE)
+pam.res[[3]] <- pam(species_coord, 11,  metric = "euclidean", stand = FALSE)
 # Silhouette plot
 png("Figures/Diplodus_silhouette_k3.png",width=20,height=10,units="cm",res=300)
 fviz_silhouette(pam.res[[1]], palette = "jco", ggtheme = theme_classic())
 dev.off()
-png("Figures/Diplodus_silhouette_k26.png",width=20,height=10,units="cm",res=300)
-fviz_silhouette(pam.res[[2]], ggtheme = theme_classic())
-dev.off()
 png("Figures/Diplodus_silhouette_k2.png",width=20,height=10,units="cm",res=300)
-fviz_silhouette(pam.res[[3]], palette = "jco", ggtheme = theme_classic())
+fviz_silhouette(pam.res[[2]], palette = "jco", ggtheme = theme_classic())
+dev.off()
+png("Figures/Diplodus_silhouette_k11.png",width=20,height=10,units="cm",res=300)
+fviz_silhouette(pam.res[[3]], ggtheme = theme_classic())
 dev.off()
 # Map
 pus %>% filter(Diplodus_sargus == 1) %>% mutate(cl = factor(pam.res[[3]]$clustering)) %>%
