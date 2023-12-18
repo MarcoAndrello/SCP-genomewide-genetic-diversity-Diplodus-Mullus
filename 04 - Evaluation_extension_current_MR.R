@@ -227,7 +227,8 @@ toc()
 set.seed(20231214)
 rap_data_20 <- rap_data
 prob_20gs <- res_20gs <- list()
-for (i.perm in 5:5) {
+for (i.perm in 1 : 5) {
+    # Sample 20% of demand points randomly
     id_Diplodus <- sample(2253,2253*0.2)
     id_Mullus <- sample(3613,3613*0.2)
     rap_data_20@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords <-
@@ -236,7 +237,7 @@ for (i.perm in 5:5) {
     rap_data_20@attribute.spaces[[1]]@spaces[[2]]@demand.points@coords <-
         rap_data@attribute.spaces[[1]]@spaces[[2]]@demand.points@coords[id_Mullus,]
     rap_data_20@attribute.spaces[[1]]@spaces[[2]]@demand.points@weights <- rep(1/length(id_Mullus),length(id_Mullus))
-
+    # Define problem and solve it
     ro <- RapUnreliableOpts(BLM=0)
     prob_20gs[[i.perm]] <- RapUnsolved(ro, rap_data_20)
     tic()
@@ -244,4 +245,4 @@ for (i.perm in 5:5) {
                                 MIPGap=0.02, NumberSolutions=1L)
     toc()
 }
-save(prob_20gs, res_20gs, file="TEMP_prob_20gs_quintaPerm.RData")
+save(prob_20gs, res_20gs, file="Results/Results_raptr_20gs.RData")

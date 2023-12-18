@@ -2,11 +2,15 @@
 rm(list=ls())
 
 library(tidyverse)
+library(cluster)
 library(sf)
 library(terra)
 library(prioritizr)
 library(parallel)
 library(rgeoda)
+library(rnaturalearth)
+library(factoextra)
+library(tmap)
 
 # Number of assigned threads
 threads <- 1L #as.integer(max(1, detectCores() - 2))
@@ -84,17 +88,129 @@ for (i.class_method in 1 : 4){
 rm(st_matrix,class_method,num_classes,i.class_method,i.num_classes,i.scen,i.axis,v.class_method)
 
 
-#### QUI DA MODIFICARE DANDO A SPLIT MULTI GIA LA CLUSTERIZZAZIONE FATTA
+################################################################################
+# PAM clustering
+################################################################################
+# Get countries for plotting the clusters
+ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(pus)) -> countries
+# Define object to store clustering results
+pam.res <- list()
+pam.res[[1]] <- list() # for Diplodus
+pam.res[[2]] <- list() # for Mullus
+# Add ID to rows to be able to join the results of clustering (made only on occupied PUs) with all PUs
+pus %>%
+    mutate(ID = c(1:nrow(pus))) %>%
+    select(ID, Diplodus_sargus, Mullus_surmuletus) ->
+    pus_for_clustering
+# Create one PU dataset for each species
+pus_for_clustering %>%
+    st_drop_geometry %>%
+    cbind(g_rast_values[[1]]) %>%
+    filter(Diplodus_sargus == 1) -> pus_for_clustering_Diplodus
+pus_for_clustering %>%
+    st_drop_geometry %>%
+    cbind(g_rast_values[[2]]) %>%
+    filter(Mullus_surmuletus == 1) -> pus_for_clustering_Mullus
+
+## Clustering for Diplodus
+for (i.clust in 1 : 3){
+    # Number of clusters
+    k <- c(2,3,11)[i.clust]
+    # Select only pca scores and perform pam clustering
+    pus_for_clustering_Diplodus %>%
+        select(-c(ID, Diplodus_sargus, Mullus_surmuletus)) %>%
+        pam(k=k,metric = "euclidean", stand = FALSE) ->
+        pam.res[[1]][[i.clust]]
+    # # Plot silhouette
+    # png(paste0("Figures/Diplodus_silhouette_k",k,".png"),width=20,height=10,units="cm",res=300)
+    # print(fviz_silhouette(pam.res[[1]][[i.clust]], palette="Set3",
+    #                       ggtheme = theme_classic(), main=paste0("Diplodus sargus k",k)))
+    # dev.off()
+}
+# Join to all PUs
+pus_for_clustering_Diplodus %>% mutate(Diplodus_k2 = factor(pam.res[[1]][[1]]$clustering),
+                                       Diplodus_k3 = factor(pam.res[[1]][[2]]$clustering),
+                                       Diplodus_k11 = factor(pam.res[[1]][[3]]$clustering)) %>%
+    select(ID, Diplodus_k2, Diplodus_k3, Diplodus_k11) %>%
+    left_join(x=pus_for_clustering, y=., by="ID") -> pus_for_clustering
+# Plot cluster maps
+for (i.clust in 1 : 3) {
+    k <- c(2,3,11)[i.clust]
+    png(paste0("Figures/Diplodus_cluster_map_k",k,".png"),width=19,height=10,res=500,units="cm")
+    print(
+        tm_shape(pus_for_clustering) +
+            tm_fill(paste0("Diplodus_k",k), legend.is.portrait = F, palette="Set3") +
+            tm_legend(legend.outside = T, legend.outside.position = "bottom") +
+            tm_shape(countries) +
+            tm_polygons(col="lightgray")
+    )
+    dev.off()
+}
+
+# Clustering for Mullus
+for (i.clust in 1 : 3){
+    # Number of clusters
+    k <- c(2,3,5)[i.clust]
+    # Select only pca scores and perform pam clustering
+    pus_for_clustering_Mullus %>%
+        select(-c(ID, Diplodus_sargus, Mullus_surmuletus)) %>%
+        pam(k=k,metric = "euclidean", stand = FALSE) ->
+        pam.res[[2]][[i.clust]]
+    # Plot silhouette
+    png(paste0("Figures/Mullus_silhouette_k",k,".png"),width=20,height=10,units="cm",res=300)
+    print(fviz_silhouette(pam.res[[2]][[i.clust]], palette="Set3",
+                          ggtheme = theme_classic(), main=paste0("Mullus surmuletus k",k)))
+    dev.off()
+}
+# Join to all PUs
+pus_for_clustering_Mullus %>% mutate(Mullus_k2 = factor(pam.res[[2]][[1]]$clustering),
+                                     Mullus_k3 = factor(pam.res[[2]][[2]]$clustering),
+                                     Mullus_k5 = factor(pam.res[[2]][[3]]$clustering)) %>%
+    select(ID, Mullus_k2, Mullus_k3, Mullus_k5) %>%
+    left_join(x=pus_for_clustering, y=., by="ID") -> pus_for_clustering
+## Plot cluster maps
+for (i.clust in 1 : 3) {
+    k <- c(2,3,5)[i.clust]
+    png(paste0("Figures/Mullus_cluster_map_k",k,".png"),width=19,height=10,res=500,units="cm")
+    print(
+        tm_shape(pus_for_clustering) +
+            tm_fill(paste0("Mullus_k",k), legend.is.portrait = F, palette="Set3") +
+            tm_legend(legend.outside = T, legend.outside.position = "bottom") +
+            tm_shape(countries) +
+            tm_polygons(col="lightgray")
+    )
+    dev.off()
+}
+
+pus_for_clustering %>% st_drop_geometry %>% select(c("Diplodus_k2","Diplodus_k3","Diplodus_k11"))
+### MI FERMO QUI: METTERE MULLUS_KX, SOSTITUIRE NA CON 0, FARLO SELEZIONABILE CON I CLUST, ETC
+
+
 ################################################################################
 # Combining PCA axes to define conservation features
 ################################################################################
 prob_multi <- res_multi <- list()
-for (i.num_classes in 1 : 2){
+for (i.num_classes in 1 : 3){
     pus %>% 
-        select(Diplodus_sargus, Mullus_surmuletus, cost, status, cost) -> 
+        select(Diplodus_sargus, Mullus_surmuletus, cost, status) -> 
         pus_split.taxon
     # Diplodus
-    num_classes <- c(2,7)[i.num_classes] #c(2,5)[i.num_classes]
+    num_classes <- c(2,3,11)[i.num_classes]
+    # Define x_classes matrix containing the distribution of the taxon split by columns
+    x_classes <- matrix(NA,nrow=nrow(pus_split.taxon),ncol=num_classes)
+    
+    cl = factor(pam.res[[1]][[i.num_classes]]$clustering)
+    ### MI FERMO QUI
+    
+    # Loop on columns: fill the x_classes with taxon presence/absence if classified into that factor level
+    for (i in 1 : num_classes) {
+        x_classes[,i] <- ifelse(x_fac==levels(x_fac)[i],rij_taxon,0)
+    }
+    # PUs that were not classified into any factor level (bcs outside of species range) are assigned 0
+    x_classes[which(is.na(x_classes),arr.ind=T)] <- 0
+    # Assign names to the classes
+    colnames(x_classes) <- paste0(name_feat,"_",c(1:num_classes))
+    
     st_matrix <- split.taxon.multi(x = g_rast_values[[1]][,1:17],
                                    num_classes = num_classes,
                                    rij_taxon = pull(pus,"Diplodus_sargus"),
