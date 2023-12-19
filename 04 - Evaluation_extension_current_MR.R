@@ -221,7 +221,7 @@ tic()
 res_50gs[[i.perm]] <- solve(prob_50gs[[i.perm]], Threads = 1L, verbose=T, NumericFocus= 3L,
                 MIPGap=0.02, NumberSolutions=1L)
 toc()
-
+save(prob_50gs, res_50gs, file="Results/Results_raptr_50gs.RData")
 
 # Using 20% of the demand points of the gold standard
 set.seed(20231214)
@@ -246,3 +246,20 @@ for (i.perm in 1 : 5) {
     toc()
 }
 save(prob_20gs, res_20gs, file="Results/Results_raptr_20gs.RData")
+
+load("Results/Results_raptr_20gs.RData")
+space_held_Diplodus <- space_held_Mullus <- vector()
+for (i.perm in 1 : 5) {
+    cat(i.perm,"\n")
+    selections <- which(as.vector(res_20gs[[i.perm]]@results@selections) == 1)
+    res_updated <- update(prob_gs, b = selections)
+    space_held_Diplodus[i.perm] <- space.held(res_updated, y=1, species=1)
+    space_held_Diplodus[i.perm] <- space.held(res_updated, y=1, species=2)
+}
+data.frame(space_held_Diplodus = space_held_Diplodus,
+           space_held_Mullus = space_held_Mullus,
+           solution = "raptr_20percent",
+           sol = as.integer(1:5))
+
+
+
