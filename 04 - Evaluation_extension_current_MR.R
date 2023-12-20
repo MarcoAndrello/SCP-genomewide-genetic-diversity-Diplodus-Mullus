@@ -204,8 +204,8 @@ save(prob_gs,
 # Using 50% of the demand points of the gold standard
 set.seed(20231214)
 rap_data_50 <- rap_data
-i.perm <- 1
 prob_50gs <- res_50gs <- list()
+i.perm <- 2
 id_Diplodus <- sample(2253,2253/2)
 id_Mullus <- sample(3613,3613/2)
 rap_data_50@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords <-
@@ -221,7 +221,7 @@ tic()
 res_50gs[[i.perm]] <- solve(prob_50gs[[i.perm]], Threads = 1L, verbose=T, NumericFocus= 3L,
                 MIPGap=0.02, NumberSolutions=1L)
 toc()
-save(prob_50gs, res_50gs, file="Results/Results_raptr_50gs.RData")
+save(prob_50gs, res_50gs, file="Results/Results_raptr_50gs_perm2.RData")
 
 # Using 20% of the demand points of the gold standard
 set.seed(20231214)
