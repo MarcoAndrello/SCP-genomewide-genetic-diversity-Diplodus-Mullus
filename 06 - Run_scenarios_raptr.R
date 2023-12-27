@@ -34,7 +34,7 @@ toc()
 set.seed(20231214)
 rap_data_50 <- rap_data
 prob_50gs <- res_50gs <- list()
-for (i.perm in 2 : 5) {
+for (i.perm in 1 : 5) {
     id_Diplodus <- sample(2253,2253/2)
     id_Mullus <- sample(3613,3613/2)
     rap_data_50@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords <-

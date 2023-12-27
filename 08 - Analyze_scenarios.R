@@ -107,10 +107,11 @@ dev.off()
 #####################################################################################
 list_space_held <- list()
 # Solutions found with prioritizr
-for (i.prob in 1 : 1){ #length(results_prioritizr)) { 
+# Beware: takes about 2 hrs per i.prob
+for (i.prob in 1 : length(results_prioritizr)) { 
     space_held_Diplodus <- space_held_Mullus <- vector()
     for (i.sol in 1 : 100) {
-        cat(i.prob,i.sol,"\n");
+        cat(i.prob,i.sol,"\n")
         flush.console()
         selections <- which(results_prioritizr[[i.prob]] %>% pull(paste0("solution_",i.sol))==1)
         res_updated <- update(prob_gs, b = selections)
@@ -122,30 +123,46 @@ for (i.prob in 1 : 1){ #length(results_prioritizr)) {
                solution = names(results_prioritizr)[[i.prob]],
                sol = as.integer(1:100)) ->
         list_space_held[[i.prob]]
-    save(list_space_held, file=paste0("list_space_held_UPTO",i.prob,".RData"))
 }
-
+save(list_space_held, file=paste0("list_space_held_12e13.RData"))
 
 # # Solutions found with raptr
-# space_held_Diplodus <- space.held(res_gs, y=1, species=1) %>% as.vector()
-# space_held_Mullus <- space.held(res_gs, y=1, species=1) %>% as.vector()
-# data.frame(space_held = space_held_solution,
-#            solution = "raptr",
-#            sol = as.integer(1:100)) ->
-#     list_space_held[[13]]
-    
+space_held_Diplodus <- space_held_Mullus <- vector()
+for (i.prob.raptr in 1 : 2){
+    for (i.sol in 1 : 5) {
+        cat(i.prob.raptr,i.sol,"\n")
+        flush.console()
+        results_raptr[[(((i.prob.raptr-1)*5)+i.sol)]]@results@selections %>%
+            t %>%
+            as.vector %>%
+            `==`(1) %>%
+            which ->
+            selections
+        update(prob_gs, b = selections) ->
+            res_updated
+        space.held(res_updated, y=1, species=1) %>% as.vector() ->
+            space_held_Diplodus[i.sol]
+        space.held(res_updated, y=1, species=2) %>% as.vector() ->
+            space_held_Mullus[i.sol]
+    }
+    data.frame(space_held_Diplodus = space_held_Diplodus,
+               space_held_Mullus = space_held_Mullus,
+               solution = c("raptr_50perc","raptr_20perc")[i.prob.raptr],
+               sol = as.integer(1:5)) ->
+        list_space_held[[(13+i.prob.raptr)]]
+}
+
+load("Results/List_space_held.RData")
 space_held <- bind_rows(list_space_held)
-space_held$solution <- factor(space_held$solution, levels=names(results))
-save(space_held, file="Results/Space_held.RData")
+space_held$solution <- factor(space_held$solution, levels=unique(space_held$solution))
 
 # Plot
-load("Results/Space_held.RData")
 space_held %>% rename(Diplodus = space_held_Diplodus, Mullus = space_held_Mullus) %>% 
     pivot_longer(cols=c(Diplodus, Mullus)) %>%
-    rename(species=name, space_held=value) -> space_held
+    rename(species=name, space_held=value) -> space_held_longer
 theme_set(theme_classic())
 png(paste0("Figures/Space_held.png"),width=15,height=10,units="cm",res=300)
-ggplot(space_held) +
+ggplot(space_held_longer) +
     geom_boxplot(aes(x=solution, y=space_held, fill=species, colour=species)) +
     theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
     ylim(0.85,1) +
@@ -176,14 +193,20 @@ for (i.prob in 1 : length(problems_prioritizr) ) {
         list_cost[[i.prob]]
 }
 # Cost of raptr solutions
-# cost_solution <- res_gs@results@summary$Cost
-# data.frame(cost = cost_solution,
-#            solution = "raptr",
-#            sol = as.integer(1:100)) ->
-#     list_cost[[13]]
+for (i.prob.raptr in 1 : 2){
+    cost_solution <- vector()
+    for (i.sol in 1 : 5) {
+        results_raptr[[(((i.prob.raptr-1)*5)+i.sol)]]@results@summary$Cost ->
+            cost_solution[i.sol]
+    }
+    data.frame(cost = cost_solution,
+               solution = c("raptr_50perc","raptr_20perc")[i.prob.raptr],
+               sol = as.integer(1:5)) ->
+        list_cost[[(13+i.prob.raptr)]]
+}
 
 cost <- bind_rows(list_cost)
-cost$solution <- factor(cost$solution, levels=names(results))
+cost$solution <- factor(cost$solution, levels=unique(cost$solution))
 cost$cost <- cost$cost / 1000 # transforms kilo-euro into Million-euros
 
 # Number of cells and cost required to protect the species distribution only
@@ -196,7 +219,7 @@ png(paste0("Figures/Cost.png"),width=15,height=10,units="cm",res=300)
 ggplot(cost) +
     geom_boxplot(aes(x=solution, y=cost)) +
     theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
-    geom_hline(yintercept=1046,linetype="dotted") +
+    geom_hline(yintercept=1047,linetype="dotted") +
     geom_hline(yintercept=982,linetype="dashed") +
     ylab("Cost (M€)")
 dev.off()

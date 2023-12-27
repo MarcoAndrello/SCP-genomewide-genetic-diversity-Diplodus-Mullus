@@ -41,27 +41,7 @@ fviz_pca_ind(prcomp(species_coord), title = "PCA - diplodus", palette = "jco", g
 clusternum <- NbClust(species_coord, distance="euclidean", method="kmeans", index="all", max.nc = 30)
 # print results
 clusternum$Best.nc[1,] %>% table %>% sort(decreasing=T) %>% names %>% as.numeric %>% print
-save(hopkins, clusternum, file="Results/Diplodus_clustering.RData")
-# # PAM clustering
-# pam.res <- list()
-# pam.res[[1]] <- pam(species_coord, 3,  metric = "euclidean", stand = FALSE)
-# pam.res[[2]] <- pam(species_coord, 2,  metric = "euclidean", stand = FALSE)
-# pam.res[[3]] <- pam(species_coord, 11,  metric = "euclidean", stand = FALSE)
-# # Silhouette plot
-# png("Figures/Diplodus_silhouette_k3.png",width=20,height=10,units="cm",res=300)
-# fviz_silhouette(pam.res[[1]], palette = "jco", ggtheme = theme_classic())
-# dev.off()
-# png("Figures/Diplodus_silhouette_k2.png",width=20,height=10,units="cm",res=300)
-# fviz_silhouette(pam.res[[2]], palette = "jco", ggtheme = theme_classic())
-# dev.off()
-# png("Figures/Diplodus_silhouette_k11.png",width=20,height=10,units="cm",res=300)
-# fviz_silhouette(pam.res[[3]], ggtheme = theme_classic())
-# dev.off()
-# # Map
-# pus %>% filter(Diplodus_sargus == 1) %>% mutate(cl = factor(pam.res[[3]]$clustering)) %>%
-#     select(cl) %>% plot(border=NA)
-# ## write code to make maps of clusters, and show results of the find number of clusters as a table
-
+save(hopkins, clusternum, file="Results/Clustering_Diplodus.RData")
 
 
 # Mullus surmuletus
@@ -81,27 +61,4 @@ fviz_pca_ind(prcomp(species_coord), title = "PCA - Mullus", palette = "jco", geo
 clusternum <- NbClust(species_coord, distance="euclidean", method="kmeans", index="all", max.nc = 30)
 # print results
 clusternum$Best.nc[1,] %>% table %>% sort(decreasing=T) %>% names %>% as.numeric %>% print
-save(hopkins, clusternum, file="Results/Mullus_clustering.RData")
-
-
-# # PAM clustering
-# pam.res <- list()
-# pam.res[[1]] <- list() # for Diplodus
-# pam.res[[2]] <- list() # for Mullus
-# pam.res[[2]][[1]] <- pam(species_coord, 3,  metric = "euclidean", stand = FALSE)
-# pam.res[[2]][[2]] <- pam(species_coord, 30,  metric = "euclidean", stand = FALSE)
-# pam.res[[2]][[3]] <- pam(species_coord, 8,  metric = "euclidean", stand = FALSE)
-# # Silhouette plot
-# png("Figures/Mullus_silhouette_k3.png",width=20,height=10,units="cm",res=300)
-# fviz_silhouette(pam.res[[1]], palette = "jco", ggtheme = theme_classic())
-# dev.off()
-# png("Figures/Mullus_silhouette_k30.png",width=20,height=10,units="cm",res=300)
-# fviz_silhouette(pam.res[[2]], ggtheme = theme_classic())
-# dev.off()
-# png("Figures/Mullus_silhouette_k8.png",width=20,height=10,units="cm",res=300)
-# fviz_silhouette(pam.res[[3]], palette = "jco", ggtheme = theme_classic())
-# dev.off()
-# # Map
-# pus %>% filter(Mullus_surmuletus == 1) %>% mutate(cl = factor(pam.res[[3]]$clustering)) %>%
-#     select(cl) %>% plot(border=NA)
-# ## write code to make maps of clusters, and show results of the find number of clusters as a table
+save(hopkins, clusternum, file="Results/Clustering_Mullus.RData")
