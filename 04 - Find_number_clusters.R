@@ -42,7 +42,8 @@ clusternum <- NbClust(species_coord, distance="euclidean", method="kmeans", inde
 # print results
 clusternum$Best.nc[1,] %>% table %>% sort(decreasing=T) %>% names %>% as.numeric %>% print
 save(hopkins, clusternum, file="Results/Clustering_Diplodus.RData")
-
+write.csv(clusternum$All.index,file="Results/Clustering_Diplodus_allIndex.csv")
+t(clusternum$Best.nc) -> clustering_Diplodus_Best.nc
 
 # Mullus surmuletus
 num_axes <- 26
@@ -62,3 +63,8 @@ clusternum <- NbClust(species_coord, distance="euclidean", method="kmeans", inde
 # print results
 clusternum$Best.nc[1,] %>% table %>% sort(decreasing=T) %>% names %>% as.numeric %>% print
 save(hopkins, clusternum, file="Results/Clustering_Mullus.RData")
+write.csv(clusternum$All.index,file="Results/Clustering_Mullus_allIndex.csv")
+t(clusternum$Best.nc) -> clustering_Mullus_Best.nc
+cbind(clustering_Diplodus_Best.nc, clustering_Mullus_Best.nc) %>%
+    write.csv(file="Results/Clustering_BestNc.csv")
+

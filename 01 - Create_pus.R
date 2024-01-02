@@ -6,6 +6,8 @@ library(terra)
 library(sf)
 library(tidyverse)
 library(units)
+library(tmap)
+library(rnaturalearth)
 
 # Define extent of planning region (domain) from long-lat coordinates in WGS84 CRS
 region <- st_sfc(
@@ -147,7 +149,7 @@ intersection %>%
 
 # Join the mean costs to the PUs
 left_join(pus, mean_cost, by = "ID") %>%
-    mutate(cost=mean_cost/1000) %>% # divide by 1000 to avoid numerical issues
+    mutate(cost=mean_cost/1000) %>% # divide by 1000 to avoid numerical issues. So now costs are in k€
     select(-mean_cost) -> pus
 
 # Remove PUs with no cost data (13 PUs)
@@ -162,3 +164,26 @@ pus %>%
 # Save
 save(pus,pus_centroid,file="Planning_units.RData")
 
+# Map of conservation cost
+ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(pus)) -> countries
+png("Figures/Map_cost.png",
+    width=20,height=12,res=600,units="cm")
+print(
+    tm_shape(mutate(pus, cost=cost/1000)) +
+        tm_fill("cost", style="log10_pretty", legend.is.portrait = F, legend.show = T) +
+        tm_shape(filter(pus, status_0 == 1))+
+        tm_borders(col = "blue", lwd=0.2) +
+        tm_shape(countries, bbox = res) +
+        tm_polygons(col="lightgray", lwd=0.2) +
+        tm_legend(legend.outside = T, legend.outside.position = "bottom") +
+        tm_layout(main.title="Conservation cost (M€)", main.title.position = "center")
+)
+dev.off()
+
+# Boxplot comparing conservation cost between protected and non-protected PUs
+theme_set(theme_classic())
+png(paste0("Figures/Cost_boxplot_protectedVSunprotected.png"),width=5,height=10,units="cm",res=300)
+ggplot(mutate(pus, protected = factor(status_0), cost = cost/1000),aes(x=protected, y=cost)) +
+    geom_boxplot() +
+    ylab("Cost (M€)")
+dev.off()

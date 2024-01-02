@@ -11,6 +11,9 @@ library(ade4)
 library(vegan)
 library(prioritizr)
 library(raptr)
+library(tmap)
+library(rnaturalearth)
+library(RColorBrewer)
 
 load("Results/Problem_definition_raptr.RData")
 load("Results/Results_prioritizr.RData")
@@ -151,7 +154,7 @@ for (i.prob.raptr in 1 : 2){
                sol = as.integer(1:5)) ->
         list_space_held[[(13+i.prob.raptr)]]
 }
-
+save(list_space_held,file="Results/List_space_held.RData")
 load("Results/List_space_held.RData")
 space_held <- bind_rows(list_space_held)
 space_held$solution <- factor(space_held$solution, levels=unique(space_held$solution))
@@ -208,10 +211,9 @@ for (i.prob.raptr in 1 : 2){
 cost <- bind_rows(list_cost)
 cost$solution <- factor(cost$solution, levels=unique(cost$solution))
 cost$cost <- cost$cost / 1000 # transforms kilo-euro into Million-euros
+save(cost,file="Results/Cost.RData")
 
-# Number of cells and cost required to protect the species distribution only
-# n_species_distribution <- ifelse(species == "Diplodus", 338, 542) # before was 340, 544
-
+cost %>% group_by(solution) %>% summarise(mean_cost=mean(cost)) %>% arrange(mean_cost)
 
 # Plot
 theme_set(theme_classic())
@@ -246,3 +248,108 @@ dev.off()
 # )
 # cost$num_classes = factor(cost$num_classes,levels=c("low","medium","high","raptr-gs"))
 # mod <- lm(cost~method*num_classes,data=cost)
+
+# Relationships between space_held and conservation cost
+space_held %>% mutate(cost= cost$cost) %>% group_by(solution) %>%
+    summarise(mean_cost=mean(cost), mean_space_held=mean(space_held_Diplodus)) -> data
+ggplot(data,aes(x=mean_space_held, y=mean_cost, col=solution)) +
+    geom_point()
+
+
+#####################################################################################
+# (4) Map of selection frequencies
+#####################################################################################
+# Load planning units and countries shapefiles
+load("Planning_units.RData")
+ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(pus)) -> countries
+
+# Loop on planning problems to plot one map per problem
+for (i.res in 1 : 15) {
+    cat(i.res,"\n"); flush.console()
+    if (i.res < 14) {
+        selections <- results_prioritizr[[i.res]] %>%
+            st_drop_geometry() %>% select(paste0("solution_",c(1:100)))
+        names(problems_prioritizr)[i.res] -> main.title
+    }
+    if(i.res == 14) {
+        selections <- rbind(results_raptr[[1]]@results@selections,
+                            results_raptr[[2]]@results@selections,
+                            results_raptr[[3]]@results@selections,
+                            results_raptr[[4]]@results@selections,
+                            results_raptr[[5]]@results@selections) %>% t()
+        main.title <- "raptr_50perc"
+        selections -> best_selections
+    }
+    if(i.res == 15) {
+        selections <- rbind(results_raptr[[6]]@results@selections,
+                            results_raptr[[7]]@results@selections,
+                            results_raptr[[8]]@results@selections,
+                            results_raptr[[9]]@results@selections,
+                            results_raptr[[10]]@results@selections) %>% t()
+        main.title <- "raptr_20perc"
+    }
+    selection_frequency <- rowSums(selections) / ncol(selections)
+    
+# Add selection frequency 
+    pus %>%
+        mutate(sel_frequency =
+                   # Divide selection frequency into breaks
+                   selection_frequency %>%
+                   cut(breaks=seq(0,1,0.2),include.lowest=T,right=F) %>%
+                   # Make factor with levels
+                   factor(levels = c("Existing","[0,0.2)","[0.2,0.4)","[0.4,0.6)","[0.6,0.8)","[0.8,1]"))
+        ) %>%
+        # Replace selection_frequency of existing reserves with level "Existing"
+        mutate(selection_frequency = replace(sel_frequency,
+                                             which(pus$status_0 == 1), # These are the existing reserves
+                                             "Existing")
+        ) -> pus_map
+    
+    png(paste0("Figures/Maps_selections/Map_selection_frequency_prob",i.res,".png"),
+        width=20,height=8,res=600,units="cm")
+    print(
+        tm_shape(pus_map) +
+        tm_fill("selection_frequency", palette=c("gold",brewer.pal(5,"Greens")),
+                legend.is.portrait = F, legend.show = F) +
+        tm_shape(countries, bbox = res) +
+        tm_polygons(col="lightgray", lwd=0.2) +
+        tm_layout(main.title=main.title, main.title.position = "center")
+    )
+    dev.off()
+    
+    # Plot map of the best solutions (that of raptr_50)
+    if (i.res == 14) {
+        png("Figures/Map_selection_frequency.png",
+            width=20,height=15,res=600,units="cm")
+        print(
+            tm_shape(pus_map) +
+                tm_fill("selection_frequency", palette=c("gold",brewer.pal(5,"Greens")),
+                        legend.is.portrait = F, legend.show = T) +
+                tm_shape(countries, bbox = res) +
+                tm_polygons(col="lightgray", lwd=0.2) +
+                tm_legend(legend.outside = T, legend.outside.position = "bottom") +
+                tm_layout(main.title=main.title, main.title.position = "center")
+        )
+        dev.off()
+        }
+    
+}
+
+# Plot the legend only
+png("Figures/Maps_selections/Map_selection_legend.png",
+    width=20,height=8,res=600,units="cm")
+print(
+    tm_shape(pus_map) +
+        tm_fill("selection_frequency", palette=c("gold",brewer.pal(5,"Greens")),
+                legend.is.portrait = F, legend.show = T) +
+        tm_legend(legend.outside = T, legend.outside.position = "bottom") +
+        tm_layout(legend.only = T)
+)
+dev.off()
+
+
+
+
+
+
+

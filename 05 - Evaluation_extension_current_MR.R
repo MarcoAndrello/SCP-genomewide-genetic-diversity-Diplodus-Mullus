@@ -8,6 +8,9 @@ library(raptr)
 library(prioritizr)
 library(parallel)
 library(tictoc)
+library(tmap)
+library(rnaturalearth)
+library(RColorBrewer)
 
 # Number of assigned threads
 threads <- 8L #as.integer(max(1, detectCores() - 2))
@@ -65,7 +68,7 @@ for (i.species in 1 : 2) {
     # Create an object containing the coordinates of the occupied PU
     # in all genetic spaces (i.e. for all genetic PCA axes)(need this for planning.unit.points)
     pus_g_values <- cbind(g_rast_values, st_drop_geometry(pus))
-    names(pus_g_values)[1:ncol(g_rast_values)] <- paste0("spca",sprintf("%02d",1:ncol(g_rast_values)))
+    names(pus_g_values)[1:ncol(g_rast_values)] <- paste0("pca",sprintf("%02d",1:ncol(g_rast_values)))
     species_coord <- filter(pus_g_values, !!as.name(name_species) == 1) 
     species_coord <- species_coord[1:num_axes]
     rm(pus_g_values)
@@ -123,12 +126,34 @@ save(prob_gs, file="Results/Problem_definition_raptr.RData")
 ################################################################################
 # Evaluation of the current MR set for both species
 ################################################################################
-
-selections <- which(rap_data@pu$status==2)
+load("Results/Problem_definition_raptr.RData")
+selections <- which(prob_gs@data@pu$status==2)
 prob_gs_current_MR <- update(prob_gs, b = selections)
-space.held(prob_gs_current_MR , y=NULL)
-amount.held(prob_gs_current_MR , y=NULL)
-pus %>% st_drop_geometry %>% filter(status == 2) %>% pull(cost) %>% sum
+# Space held
+space.held(prob_gs_current_MR, y=NULL)
+# AMount held
+amount.held(prob_gs_current_MR, y=NULL)
+# Total conservation cost
+pus %>%
+    st_drop_geometry %>%
+    filter(status == 2) %>%
+    pull(cost) %>%
+    sum
+# Space plot
+pus %>% mutate(selected = 0) -> pus_with_selections
+pus_with_selections$selected[selections] <- 1
+# Diplodus
+prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords[,c(1,2)] %>%
+    plot(pch=16, col="gray", main="Genetic space, Diplodus sargus")
+selections_species <- which(filter(pus_with_selections,Diplodus_sargus == 1)$selected == 1) 
+prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[1]]@planning.unit.points@coords[selections_species,c(1,2)] %>%
+    points(pch=16, col="green")
+# Mullus
+prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[2]]@demand.points@coords[,c(1,2)] %>%
+    plot(pch=16, col="gray", main="Genetic space, Mullus surmuletus")
+selections_species <- which(filter(pus_with_selections,Mullus_surmuletus == 1)$selected == 1) 
+prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[2]]@planning.unit.points@coords[selections_species,c(1,2)] %>%
+    points(pch=16, col="green")
 
 
 
@@ -181,5 +206,41 @@ save(prob_so,
      cost_solution,
      file="Results/Results_Extension_Amount.RData")
 
+# Map of priority sites
+# load("Results/Results_Extension_Amount.RData")
+ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(pus)) -> countries
+
+# Calculate selection frequency
+selections <- res_so %>%
+    st_drop_geometry() %>% select(paste0("solution_",c(1:100)))
+selection_frequency <- rowSums(selections) / ncol(selections)
+
+# Add selection frequency 
+pus %>%
+    mutate(sel_frequency =
+               # Divide selection frequency into breaks
+               selection_frequency %>%
+               cut(breaks=seq(0,1,0.2),include.lowest=T,right=F) %>%
+               # Make factor with levels
+               factor(levels = c("Existing","[0,0.2)","[0.2,0.4)","[0.4,0.6)","[0.6,0.8)","[0.8,1]"))
+    ) %>%
+    # Replace selection_frequency of existing reserves with level "Existing"
+    mutate(selection_frequency = replace(sel_frequency,
+                                         which(pus$status_0 == 1), # These are the existing reserves
+                                         "Existing")
+    ) -> pus_map
+
+png("Figures/Maps_selections/Map_selection_frequency_speciesOnly.png",
+    width=20,height=12,res=600,units="cm")
+print(
+    tm_shape(pus_map) +
+        tm_fill("selection_frequency", palette=c("gold",brewer.pal(5,"Greens")),
+                legend.is.portrait = F, legend.show = T) +
+        tm_shape(countries, bbox = res) +
+        tm_polygons(col="lightgray", lwd=0.2) +
+        tm_legend(legend.outside = T, legend.outside.position = "bottom") +
+        tm_layout(main.title="Range only", main.title.position = "center")
+)
+dev.off()
 
 

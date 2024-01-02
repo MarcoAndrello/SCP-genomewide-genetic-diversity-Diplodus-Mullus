@@ -65,14 +65,18 @@ for (i.axis in 1 : 17){ #ncol(pca$li)){
 }
 
 # Plot boxplots showing the distribution of MAPE over the 5 folds, for each Axis and for the two methods (for Diplodus)
+theme_set(theme_classic())
 colnames(mape_nn) <- colnames(mape_idw) <- c(1:5) 
-mape_nn %>% as_tibble %>% mutate(method="nn") %>%               # MAPE of nn
-    rbind(mape_idw %>% as_tibble %>% mutate(method="idw")) %>%  # MAPE of idw
-    mutate(Axis=rep(c(1:17),2)) %>%
+png("Figures/Spatial_interpolation_Diplodus.png",width=20,height=10,res=300,units="cm")
+mape_nn %>% as_tibble %>% mutate(method="NN") %>%               # MAPE of nn
+    rbind(mape_idw %>% as_tibble %>% mutate(method="IDW")) %>%  # MAPE of idw
+    mutate(Axis=factor(rep(c(1:17),2))) %>%
     pivot_longer(cols=c(1:5),names_to="kfold") %>%
     rename(MAPE=value) %>%
-    ggplot(aes(x=factor(Axis),y=MAPE)) +
-    geom_boxplot(aes(fill=method))
+    ggplot(aes(x=Axis,y=MAPE)) +
+    geom_boxplot(aes(fill=method)) +
+    ggtitle("Spatial interpolation, Diplodus sargus")
+dev.off()
 
 # Plot map of nn interpolation for Axis 1
 data <- data.frame(pca=pca$li[,1], X=Diplodus_coord_Albers[,1], Y=Diplodus_coord_Albers[,2])
@@ -89,7 +93,7 @@ aidwmsk <- mask(aidw,filter(pus, Diplodus_sargus==1))
 plot(aidwmsk,1, main="Inverse distance weighting interpolation")
 values(aidwmsk) %>% as.vector %>% unique %>% length
 
-## NOTA: RIFARE  IL GRAFICO E LE DUE MAPPE PRECEDENTI SALVANDOLE, E METTENDOLE IN MATERIALI SUPPLEMENTARI
+## NOTA: RIFARE  LE DUE MAPPE PRECEDENTI SALVANDOLE PER RISPOSTA AI REVIEWERS
 ## COMMENTARE IL CODICE SOTTO PER MULLUS
 
 
@@ -141,15 +145,19 @@ for (i.axis in 1 : 26){
 mape_nn %>% rowMeans %>% barplot(xlab="PCA axis",names.arg=c(1:26), main="MAPE Nearest neighbor",ylim=c(0,15000))
 mape_idw %>% rowMeans %>% barplot(xlab="PCA axis",names.arg=c(1:26), main="MAPE inverse distance weighing",ylim=c(0,15000))
 
+# Plot boxplots showing the distribution of MAPE over the 5 folds, for each Axis and for the two methods (for Mullus)
 colnames(mape_nn) <- colnames(mape_idw) <- c(1:5) 
-mape_nn %>% as_tibble %>% mutate(method="nn") %>%
-    rbind(mape_idw %>% as_tibble %>% mutate(method="idw")) %>%
-    mutate(Axis=rep(c(1:26),2)) %>%
+png("Figures/Spatial_interpolation_Mullus.png",width=20,height=10,res=300,units="cm")
+mape_nn %>% as_tibble %>% mutate(method="NN") %>%
+    rbind(mape_idw %>% as_tibble %>% mutate(method="IDW")) %>%
+    mutate(Axis=factor(rep(c(1:26),2))) %>%
     pivot_longer(cols=c(1:5),names_to="kfold") %>%
     rename(MAPE=value) %>%
-    ggplot(aes(x=factor(Axis),y=MAPE)) +
+    ggplot(aes(x=Axis,y=MAPE)) +
     geom_boxplot(aes(fill=method)) +
-    ylim(0,2500)
+    ylim(0,2500) +
+    ggtitle("Spatial interpolation, Mullus surmuletus")
+dev.off()
 
 #
 data <- data.frame(pca=pca$li[,1], X=coord_Albers[,1], Y=coord_Albers[,2])
