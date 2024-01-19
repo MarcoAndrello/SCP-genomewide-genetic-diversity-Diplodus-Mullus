@@ -17,7 +17,8 @@ library(RColorBrewer)
 
 load("Results/Problem_definition_raptr.RData")
 load("Results/Results_prioritizr.RData")
-load("Results/Results_raptr.RData")
+load("Results/Results_raptr_50gs.RData")
+load("Results/Results_raptr_20gs.RData")
 
 
 #####################################################################################
@@ -31,43 +32,41 @@ jaccard_distance <- pvalue <- array(NA,dim=c(length(results_prioritizr)+2,length
 dimnames(jaccard_distance) <- dimnames(pvalue) <- list("1" = c(names(results_prioritizr),"raptr_50perc","raptr_20perc"),
                                                        "2" = c(names(results_prioritizr),"raptr_50perc","raptr_20perc"))
 
-i.res <- 1; j.res <- 14
 for (i.res in 1 : (nrow(jaccard_distance)-1)) {
     for (j.res in (i.res+1) : nrow(jaccard_distance) ) {
         cat(i.res,j.res,"\n"); flush.console()
         if (i.res < 14) {
             first_group <- results_prioritizr[[i.res]] %>% st_drop_geometry() %>% select(paste0("solution_",c(1:100)))
         }
-        if(i.res == 15) {
-            first_group <- rbind(results_raptr[[1]]@results@selections,
-                                 results_raptr[[2]]@results@selections,
-                                 results_raptr[[3]]@results@selections,
-                                 results_raptr[[4]]@results@selections,
-                                 results_raptr[[5]]@results@selections) %>% t()
+        if(i.res == 14) {
+            first_group <- res_50gs[[1]]@results@selections
+            for (i in 2 : 20) first_group <- rbind(first_group,
+                                                   res_50gs[[i]]@results@selections)
+            first_group <- t(first_group)
         }
-        if(i.res == 16) {
-            first_group <- rbind(results_raptr[[6]]@results@selections,
-                                 results_raptr[[7]]@results@selections,
-                                 results_raptr[[8]]@results@selections,
-                                 results_raptr[[9]]@results@selections,
-                                 results_raptr[[10]]@results@selections) %>% t()
+        if(i.res == 15) {
+            first_group <- res_20gs[[1]]@results@selections
+            for (i in 2 : 20) first_group <- rbind(first_group,
+                                                   res_20gs[[i]]@results@selections)
+            first_group <- t(first_group)
+         
         }
         if (j.res < 14) {
             second_group <- results_prioritizr[[j.res]] %>% st_drop_geometry() %>% select(paste0("solution_",c(1:100)))
         }
         if(j.res == 14) {
-            second_group <- rbind(results_raptr[[1]]@results@selections,
-                                 results_raptr[[2]]@results@selections,
-                                 results_raptr[[3]]@results@selections,
-                                 results_raptr[[4]]@results@selections,
-                                 results_raptr[[5]]@results@selections) %>% t()
+            second_group <- res_50gs[[1]]@results@selections
+            for (i in 2 : 20) second_group <- rbind(second_group,
+                                                   res_50gs[[i]]@results@selections)
+            second_group <- t(second_group)
+
         }
         if(j.res == 15) {
-            second_group <- rbind(results_raptr[[6]]@results@selections,
-                                 results_raptr[[7]]@results@selections,
-                                 results_raptr[[8]]@results@selections,
-                                 results_raptr[[9]]@results@selections,
-                                 results_raptr[[10]]@results@selections) %>% t()
+            second_group <- res_20gs[[1]]@results@selections
+            for (i in 2 : 20) second_group <- rbind(second_group,
+                                                   res_20gs[[i]]@results@selections)
+            second_group <- t(second_group)
+
         }
 
         twogroups <- cbind(first_group, second_group)
@@ -76,7 +75,7 @@ for (i.res in 1 : (nrow(jaccard_distance)-1)) {
         selection_frequency_2 <- rowSums(second_group) / ncol(second_group)
         vegdist(rbind(selection_frequency_1,selection_frequency_2),method="jaccard") %>% as.numeric() -> distance_observed
         jaccard_distance[i.res,j.res] <- distance_observed
-        
+
         # Permute columns
         num_perm <- 1000
         distance_permuted <- rep(NA,num_perm)
@@ -93,6 +92,8 @@ for (i.res in 1 : (nrow(jaccard_distance)-1)) {
         pvalue[i.res,j.res] <- 1 - (ecdf(distance_permuted)(distance_observed))
     }
 }
+
+jaccard_distance %>% as.vector %>% summary
 save(jaccard_distance, pvalue, file="Results/Jaccard_distance.RData")
 
 # Plot a tree showing distances between solutions
@@ -102,7 +103,6 @@ png("Figures/hclust.png",width=15,height=15,units="cm",res=300)
 par(mar=c(1,4,2,1))
 plot(hc,main="Distance between solutions",xlab="",sub="")
 dev.off()
-
 
 
 #####################################################################################
@@ -130,30 +130,55 @@ for (i.prob in 1 : length(results_prioritizr)) {
 save(list_space_held, file=paste0("list_space_held_12e13.RData"))
 
 # # Solutions found with raptr
+# res_50gs
 space_held_Diplodus <- space_held_Mullus <- vector()
-for (i.prob.raptr in 1 : 2){
-    for (i.sol in 1 : 5) {
-        cat(i.prob.raptr,i.sol,"\n")
-        flush.console()
-        results_raptr[[(((i.prob.raptr-1)*5)+i.sol)]]@results@selections %>%
-            t %>%
-            as.vector %>%
-            `==`(1) %>%
-            which ->
-            selections
-        update(prob_gs, b = selections) ->
-            res_updated
-        space.held(res_updated, y=1, species=1) %>% as.vector() ->
-            space_held_Diplodus[i.sol]
-        space.held(res_updated, y=1, species=2) %>% as.vector() ->
-            space_held_Mullus[i.sol]
-    }
-    data.frame(space_held_Diplodus = space_held_Diplodus,
-               space_held_Mullus = space_held_Mullus,
-               solution = c("raptr_50perc","raptr_20perc")[i.prob.raptr],
-               sol = as.integer(1:5)) ->
-        list_space_held[[(13+i.prob.raptr)]]
+for (i.sol in 1 : 20) {
+    cat(i.sol,"\n")
+    flush.console()
+    res_50gs[[i.sol]]@results@selections %>%
+        t %>%
+        as.vector %>%
+        `==`(1) %>%
+        which ->
+        selections
+    update(prob_gs, b = selections) ->
+        res_updated
+    space.held(res_updated, y=1, species=1) %>% as.vector() ->
+        space_held_Diplodus[i.sol]
+    space.held(res_updated, y=1, species=2) %>% as.vector() ->
+        space_held_Mullus[i.sol]
 }
+data.frame(space_held_Diplodus = space_held_Diplodus,
+           space_held_Mullus = space_held_Mullus,
+           solution = "raptr_50perc",
+           sol = as.integer(1:20)) ->
+list_space_held[[14]]
+
+
+# res_20gs
+space_held_Diplodus <- space_held_Mullus <- vector()
+for (i.sol in 1 : 20) {
+    cat(i.sol,"\n")
+    flush.console()
+    res_20gs[[i.sol]]@results@selections %>%
+        t %>%
+        as.vector %>%
+        `==`(1) %>%
+        which ->
+        selections
+    update(prob_gs, b = selections) ->
+        res_updated
+    space.held(res_updated, y=1, species=1) %>% as.vector() ->
+        space_held_Diplodus[i.sol]
+    space.held(res_updated, y=1, species=2) %>% as.vector() ->
+        space_held_Mullus[i.sol]
+}
+data.frame(space_held_Diplodus = space_held_Diplodus,
+           space_held_Mullus = space_held_Mullus,
+           solution = "raptr_20perc",
+           sol = as.integer(1:20)) ->
+    list_space_held[[15]]
+
 save(list_space_held,file="Results/List_space_held.RData")
 load("Results/List_space_held.RData")
 space_held <- bind_rows(list_space_held)
@@ -195,18 +220,28 @@ for (i.prob in 1 : length(problems_prioritizr) ) {
                sol = as.integer(1:100)) ->
         list_cost[[i.prob]]
 }
+
 # Cost of raptr solutions
-for (i.prob.raptr in 1 : 2){
-    cost_solution <- vector()
-    for (i.sol in 1 : 5) {
-        results_raptr[[(((i.prob.raptr-1)*5)+i.sol)]]@results@summary$Cost ->
-            cost_solution[i.sol]
-    }
-    data.frame(cost = cost_solution,
-               solution = c("raptr_50perc","raptr_20perc")[i.prob.raptr],
-               sol = as.integer(1:5)) ->
-        list_cost[[(13+i.prob.raptr)]]
+# res_50gs
+cost_solution <- vector()
+for (i.sol in 1 : 20) {
+    res_50gs[[i.sol]]@results@summary$Cost ->
+        cost_solution[i.sol]
 }
+data.frame(cost = cost_solution,
+           solution = "raptr_50perc",
+           sol = as.integer(1:20)) ->
+    list_cost[[14]]
+# res_20gs
+cost_solution <- vector()
+for (i.sol in 1 : 20) {
+    res_20gs[[i.sol]]@results@summary$Cost ->
+        cost_solution[i.sol]
+}
+data.frame(cost = cost_solution,
+           solution = "raptr_20perc",
+           sol = as.integer(1:20)) ->
+    list_cost[[15]]
 
 cost <- bind_rows(list_cost)
 cost$solution <- factor(cost$solution, levels=unique(cost$solution))
@@ -225,7 +260,6 @@ ggplot(cost) +
     geom_hline(yintercept=982,linetype="dashed") +
     ylab("Cost (M€)")
 dev.off()
-
 
 # ## Significant differences?
 # ## Define method and num_classes column
@@ -264,7 +298,7 @@ load("Planning_units.RData")
 ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(pus)) -> countries
 
 # Loop on planning problems to plot one map per problem
-for (i.res in 1 : 15) {
+for (i.res in 14 : 15) {
     cat(i.res,"\n"); flush.console()
     if (i.res < 14) {
         selections <- results_prioritizr[[i.res]] %>%
@@ -272,20 +306,23 @@ for (i.res in 1 : 15) {
         names(problems_prioritizr)[i.res] -> main.title
     }
     if(i.res == 14) {
-        selections <- rbind(results_raptr[[1]]@results@selections,
-                            results_raptr[[2]]@results@selections,
-                            results_raptr[[3]]@results@selections,
-                            results_raptr[[4]]@results@selections,
-                            results_raptr[[5]]@results@selections) %>% t()
+        selections <- res_50gs[[1]]@results@selections
+        for (i in 2 : 20) selections <- rbind(selections,
+                                               res_50gs[[i]]@results@selections)
+        selections <- t(selections)
         main.title <- "raptr_50perc"
         selections -> best_selections
     }
     if(i.res == 15) {
-        selections <- rbind(results_raptr[[6]]@results@selections,
-                            results_raptr[[7]]@results@selections,
-                            results_raptr[[8]]@results@selections,
-                            results_raptr[[9]]@results@selections,
-                            results_raptr[[10]]@results@selections) %>% t()
+        selections <- res_20gs[[1]]@results@selections
+        for (i in 2 : 20) selections <- rbind(selections,
+                                              res_20gs[[i]]@results@selections)
+        selections <- t(selections)
+        # selections <- rbind(results_raptr[[6]]@results@selections,
+        #                     results_raptr[[7]]@results@selections,
+        #                     results_raptr[[8]]@results@selections,
+        #                     results_raptr[[9]]@results@selections,
+        #                     results_raptr[[10]]@results@selections) %>% t()
         main.title <- "raptr_20perc"
     }
     selection_frequency <- rowSums(selections) / ncol(selections)
