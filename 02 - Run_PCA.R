@@ -43,27 +43,27 @@ match_xpop_to_cellsampling <- match(row.names(xpop$tab),cell_sampling$SamplingCe
 # Retrieve geographic coordinates
 Diplodus_coord <- cell_sampling[match_xpop_to_cellsampling,c("Longitude","Latitude")]
 rm(match_xpop_to_cellsampling)
-save(Diplodus_coord,file="Diplodus_coord.RData")
+save(Diplodus_coord,file="Results/Diplodus_coord.RData")
 # Add spatial coordinates
 other(xpop)$xy <- Diplodus_coord 
 names(other(xpop)$xy) <- c("x","y")
-save(xpop,file="Data_for_PCA_Diplodus.RData")
+save(xpop,file="Results/Data_for_PCA_Diplodus.RData")
 
 # Perform PCA
-load("Data_for_PCA_Diplodus.RData")
+load("Results/Data_for_PCA_Diplodus.RData")
 pca <- dudi.pca(xpop)
-save(pca,file=paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
+save(pca,file="Results/Diplodus_pca_pop.RData")
 
 # Plot PCA (biplot and screeplot)
-load(paste0(getwd(),"/Results/Diplodus_pca_pop.RData"))
-png(paste0("Figures/PCA_biplot_Diplodus.png"),width=15,height=15,units="cm",res=300)
+load("Results/Diplodus_pca_pop.RData")
+png("Figures/PCA_biplot_Diplodus.png",width=15,height=15,units="cm",res=300)
 plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Diplodus sargus")
 dev.off()
 screeplot(pca)
 pca$eig/sum(pca$eig)
 
 # Interpolation
-load("Data_for_PCA_Diplodus.RData")
+load("Results/Data_for_PCA_Diplodus.RData")
 load("Results/Diplodus_pca_pop.RData")
 # Define obs sf object so we can convert the lat-lon coordinates to Albers equal area
 obs <- st_as_sf(data.frame(pca1=0,
@@ -92,10 +92,10 @@ for (i.axis in 1 : 17){
 # Save as raster
 names(pca_interp) <- paste("Axis",c(1:17))
 pca_rast <- rast(pca_interp)
-writeRaster(pca_rast, file=paste0(getwd(),"/Results/Diplodus_allAxes_8068.grd"))
+writeRaster(pca_rast, file="Results/Diplodus_allAxes_8068.grd")
 
 # Plotting the rasters - Figure S3
-g_rast <- rast(paste0(getwd(),"/Results/Diplodus_allAxes_8068.grd"))
+g_rast <- rast("Results/Diplodus_allAxes_8068.grd")
 # Read countries for plotting maps
 ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
 png(paste0("Genetic_rasters_Diplodus_1.png"),width=20,height=24,units="cm",res=300)
@@ -118,23 +118,23 @@ dev.off()
 ####################
 # Mullus surmuletus
 ####################
-load(paste0(getwd(),"/data/Mullus_2753.RData"))
+load("data/Mullus_2753.RData")
 x <- Mullus_2753; rm(Mullus_2753)
 x$pop <- Mullus_sampling$SamplingCell
 xpop <- genind2genpop(x)
 match_xpop_to_cellsampling <- match(row.names(xpop$tab),cell_sampling$SamplingCell)
 Mullus_coord <- cell_sampling[match_xpop_to_cellsampling,c("Longitude","Latitude")]
 rm(match_xpop_to_cellsampling)
-save(Mullus_coord,file="Mullus_coord.RData")
+save(Mullus_coord,file="Results/Mullus_coord.RData")
 other(xpop)$xy <- Mullus_coord 
 names(other(xpop)$xy) <- c("x","y")
-save(xpop,file="Data_for_PCA_Mullus.RData")
+save(xpop,file="Results/Data_for_PCA_Mullus.RData")
 
 # Perform PCA
 pca <- dudi.pca(xpop)
-save(pca,file=paste0(getwd(),"/Results/Mullus_pca_pop.RData"))
+save(pca,file="Results/Mullus_pca_pop.RData")
 # Plot PCA (biplot and screeplot)
-load(paste0(getwd(),"/Results/Mullus_pca_pop.RData"))
+load("Results/Mullus_pca_pop.RData")
 png("Figures/PCA_biplot_Mullus.png",width=15,height=15,units="cm",res=300)    
 plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Mullus surmuletus")
 dev.off()
@@ -142,7 +142,7 @@ screeplot(pca)
 pca$eig/sum(pca$eig)
 
 # Interpolation
-load("Data_for_PCA_Mullus.RData")
+load("Results/Data_for_PCA_Mullus.RData")
 load("Results/Mullus_pca_pop.RData")
 obs <- st_as_sf(data.frame(pca1=0,
                            lon=xpop@other$xy$x,
@@ -169,11 +169,11 @@ for (i.axis in 1 : 26){
 # Save as raster
 names(pca_interp) <- paste("Axis",c(1:26))
 pca_rast <- rast(pca_interp)
-writeRaster(pca_rast, file=paste0(getwd(),"/Results/Mullus_allAxes_2753.grd"))
+writeRaster(pca_rast, file="Results/Mullus_allAxes_2753.grd")
 
 
 # Plotting the rasters - Figure S4
-g_rast <- rast(paste0(getwd(),"/Results/Mullus_allAxes_2753.grd"))
+g_rast <- rast("Results/Mullus_allAxes_2753.grd")
 # Read countries for plotting maps
 ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
 png(paste0("Genetic_rasters_Mullus_1.png"),width=20,height=24,units="cm",res=300)
