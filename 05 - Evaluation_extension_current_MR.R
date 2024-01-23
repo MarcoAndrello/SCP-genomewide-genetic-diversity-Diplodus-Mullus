@@ -206,41 +206,4 @@ save(prob_so,
      cost_solution,
      file="Results/Results_Extension_Amount.RData")
 
-# Map of priority sites
-# load("Results/Results_Extension_Amount.RData")
-ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(pus)) -> countries
-
-# Calculate selection frequency
-selections <- res_so %>%
-    st_drop_geometry() %>% select(paste0("solution_",c(1:100)))
-selection_frequency <- rowSums(selections) / ncol(selections)
-
-# Add selection frequency 
-pus %>%
-    mutate(sel_frequency =
-               # Divide selection frequency into breaks
-               selection_frequency %>%
-               cut(breaks=seq(0,1,0.2),include.lowest=T,right=F) %>%
-               # Make factor with levels
-               factor(levels = c("Existing","[0,0.2)","[0.2,0.4)","[0.4,0.6)","[0.6,0.8)","[0.8,1]"))
-    ) %>%
-    # Replace selection_frequency of existing reserves with level "Existing"
-    mutate(selection_frequency = replace(sel_frequency,
-                                         which(pus$status_0 == 1), # These are the existing reserves
-                                         "Existing")
-    ) -> pus_map
-
-png("Figures/Maps_selections/Map_selection_frequency_speciesOnly.png",
-    width=20,height=12,res=600,units="cm")
-print(
-    tm_shape(pus_map) +
-        tm_fill("selection_frequency", palette=c("gold",brewer.pal(5,"Greens")),
-                legend.is.portrait = F, legend.show = T) +
-        tm_shape(countries, bbox = res) +
-        tm_polygons(col="lightgray", lwd=0.2) +
-        tm_legend(legend.outside = T, legend.outside.position = "bottom") +
-        tm_layout(main.title="Range only", main.title.position = "center")
-)
-dev.off()
-
 

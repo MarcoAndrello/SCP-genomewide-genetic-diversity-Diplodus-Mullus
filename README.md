@@ -1,20 +1,50 @@
 # Genetic-SCP-Diplodus-Mullus
-Spatial Conservation Planning (SCP) in the Mediterranean Sea using genome-wide genetic diversity for Diplodus sargus and Mullus surmuletus
+Evaluating different approaches to integrate genome-wide genetic diversity in spatial conservation prioritization
 
-This repository contains code to perform the SCP analysis presented in the manuscript. The analysis is subdivided in the following steps, each corresponding to a code file and detailed below, to be executed in this order:
+This repository contains code to perform all the analyses presented in the manuscript. The analysis is subdivided in the following steps, each corresponding to a code file and detailed below, to be executed in this order:
 
 01 - Create_pus.R
 
-This code creates the planning units (PUs): 5216 square PUs (10 km side) spanning the Mediterranean Sea over coastal areas (<200 m depth).
+This code creates the planning units (PUs): 5203 square PUs (10 km side) spanning the Mediterranean Sea over coastal areas (<200 m depth).
 It extracts the presence/absence of the two species from the FishMed database.
 It identifies the PUs already protected according to the marine reserves identified by Abecasis et al (2023) and calculates the surface area protected (Table S1).
 It imports the conservation costs of Mazor et al (2014).
 
 
-02b - PCA_allAxes.R
+02 - Run_PCA.R
 
-This script performs the principal component analysis (PCA) on the genomic datasets of Boulanger et al (2022): 8068 SNPs for D. sargus and 2753 SNPs for M. surmuletus; and plots the results of the PCA (Figure S2).
-For each axis of the PCA, it interpolates the scores of the sampled sites on a raster spanning the study region, and plots the rasters (Figure S3 and S4).
+This script performs the principal component analysis (PCA) on the genomic datasets of Boulanger et al (2022): 8068 SNPs for D. sargus and 2753 SNPs for M. surmuletus; and plots the first two axes of the PCA (Figure S5).
+For each axis of the PCA, it interpolates the scores of the sampled sites on a raster spanning the study region using inverse distance weighting interpolation.
+
+
+03 - Compare_spatial_interpolation_PCA.R
+
+This script compares two spatial interpolation models for PCA scores: (i) nearest-neighbor interpolation and (ii) inverse distance weighting interpolation using k-fold cross validation (Figure S9).
+
+
+04 - Find_number_clusters.R
+
+This scripts finds the optimal number of clusters for the multidimensional discrete genetic cluster approach, by applying several clustering indices to the data (Table S2).
+
+
+05 - Evaluation_extension_current_Mr.R
+
+This script defines a raptr problem with one multidimensional genetic space for each of the two species using one demand point for each planning unit where the species is present.
+It evaluates the amount and space held by the current set of marine reserves.
+It formulates and solveS (using prioritizr) a prioritization problem to extend the current set of marine reserves to cover 15% of the species' ranges.
+
+
+MI FERMO QUI:
+MODIFICARE RUN SCENARIOS RAPTR PER FAR CORRISPONDERE I NOMI DEI FILES DEI RISULTATI
+
+
+
+06 - Run_scenarios_raptr.R
+
+This script defines the planning problems for raptr and solves them.
+It defines the 13 problems (10 single-PCA and 3 multi-PCA problems) by defining the attribute spaces, placing the demand points and setting the targets, then solves the problems with raptr using Gurobi.
+The 10 single-PCA problems consider 4 methods to place demand points (quantile interval, equal interval, natural breaks and standard deviation) and 3 numbers of demand points (only 1 for the standard deviation).
+The 3 multi-PCA problems consider 3 different numbers of demand points, placed using a hypervolume approach.
 
 
 03a - Scenarios_prioritizr.R
@@ -25,12 +55,7 @@ The 10 single-PCA problems consider 4 classification methods (quantile interval,
 The 2 multi-PCA problems consider 2 different numbers of clusters.
 
 
-03b - Scenarios_raptr.R
 
-This script defines the planning problems for raptr and solves them.
-It defines the 13 problems (10 single-PCA and 3 multi-PCA problems) by defining the attribute spaces, placing the demand points and setting the targets, then solves the problems with raptr using Gurobi.
-The 10 single-PCA problems consider 4 methods to place demand points (quantile interval, equal interval, natural breaks and standard deviation) and 3 numbers of demand points (only 1 for the standard deviation).
-The 3 multi-PCA problems consider 3 different numbers of demand points, placed using a hypervolume approach.
 
 
 04a - Analyze_scenarios_prioritizr.R

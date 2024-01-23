@@ -94,26 +94,6 @@ names(pca_interp) <- paste("Axis",c(1:17))
 pca_rast <- rast(pca_interp)
 writeRaster(pca_rast, file="Results/Diplodus_allAxes_8068.grd")
 
-# Plotting the rasters - Figure S3
-g_rast <- rast("Results/Diplodus_allAxes_8068.grd")
-# Read countries for plotting maps
-ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
-png(paste0("Genetic_rasters_Diplodus_1.png"),width=20,height=24,units="cm",res=300)
-par(mfrow=c(4,3))
-for (i in 1 : 12) {
-    plot(g_rast,i,mar=c(2,0.5,0.5,0.5),axes=F,legend="bottom",main=paste("Axis",i))
-    polys(countries,col="gray",lwd=0.01)
-}
-dev.off()
-png(paste0("Genetic_rasters_Diplodus_2.png"),width=20,height=24,units="cm",res=300)
-par(mfrow=c(4,3))
-for (i in 13 : 17) {
-    plot(g_rast,i,mar=c(2,0.5,0.5,0.5),axes=F,legend="bottom",main=paste("Axis",i))
-    polys(countries,col="gray",lwd=0.01)
-}
-dev.off()
-
-
 
 ####################
 # Mullus surmuletus
@@ -170,31 +150,4 @@ for (i.axis in 1 : 26){
 names(pca_interp) <- paste("Axis",c(1:26))
 pca_rast <- rast(pca_interp)
 writeRaster(pca_rast, file="Results/Mullus_allAxes_2753.grd")
-
-
-# Plotting the rasters - Figure S4
-g_rast <- rast("Results/Mullus_allAxes_2753.grd")
-# Read countries for plotting maps
-ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(g_rast)) -> countries
-png(paste0("Genetic_rasters_Mullus_1.png"),width=20,height=24,units="cm",res=300)
-par(mfrow=c(4,3))
-for (i in 1 : 12) {
-    plot(g_rast,i,mar=c(2,0.5,0.5,0.5),axes=F,legend="bottom",main=paste("Axis",i))
-    polys(countries,col="gray",lwd=0.01)
-}
-dev.off()
-png(paste0("Genetic_rasters_Mullus_2.png"),width=20,height=24,units="cm",res=300)
-par(mfrow=c(4,3))
-for (i in 13 : 24) {
-    plot(g_rast,i,mar=c(2,0.5,0.5,0.5),axes=F,legend="bottom",main=paste("Axis",i))
-    polys(countries,col="gray",lwd=0.01)
-}
-dev.off()
-png(paste0("Genetic_rasters_Mullus_3.png"),width=20,height=24,units="cm",res=300)
-par(mfrow=c(4,3))
-for (i in 25 : 26) {
-    plot(g_rast,i,mar=c(2,0.5,0.5,0.5),axes=F,legend="bottom",main=paste("Axis",i))
-    polys(countries,col="gray",lwd=0.01)
-}
-dev.off()
 

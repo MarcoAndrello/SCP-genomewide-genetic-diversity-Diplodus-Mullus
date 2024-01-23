@@ -1,4 +1,6 @@
-# Interpolation study
+# Compare two spatial interpolation models for PCA scores:
+# i) nearest-neighbor interpolation
+# ii) inverse distance weighting interpolation
 
 rm(list=ls())
 
@@ -78,23 +80,21 @@ mape_nn %>% as_tibble %>% mutate(method="NN") %>%               # MAPE of nn
     ggtitle("Spatial interpolation, Diplodus sargus")
 dev.off()
 
-# Plot map of nn interpolation for Axis 1
-data <- data.frame(pca=pca$li[,1], X=Diplodus_coord_Albers[,1], Y=Diplodus_coord_Albers[,2])
-gsnn <- gstat(formula=pca~1, locations=~X+Y, data=data, nmax=5, set=list(idp=0))
-ann <- terra::interpolate(object=pust, model=gsnn, xyNames=c("X", "Y"))
-annmsk <- mask(ann,filter(pus, Diplodus_sargus==1))
-plot(annmsk,1,main="Nearest neighbor interpolation")
-values(annmsk) %>% as.vector %>% unique %>% length
+# # Plot map of nn interpolation for Axis 1
+# data <- data.frame(pca=pca$li[,1], X=Diplodus_coord_Albers[,1], Y=Diplodus_coord_Albers[,2])
+# gsnn <- gstat(formula=pca~1, locations=~X+Y, data=data, nmax=5, set=list(idp=0))
+# ann <- terra::interpolate(object=pust, model=gsnn, xyNames=c("X", "Y"))
+# annmsk <- mask(ann,filter(pus, Diplodus_sargus==1))
+# plot(annmsk,1,main="Nearest neighbor interpolation")
+# values(annmsk) %>% as.vector %>% unique %>% length
+# 
+# # Plot map of idw interpolation for Axis 1
+# gsidw <- gstat(formula=pca~1, locations=~X+Y, data=data)
+# aidw <- terra::interpolate(object=pust, model=gsidw, xyNames=c("X", "Y"))
+# aidwmsk <- mask(aidw,filter(pus, Diplodus_sargus==1))
+# plot(aidwmsk,1, main="Inverse distance weighting interpolation")
+# values(aidwmsk) %>% as.vector %>% unique %>% length
 
-# Plot map of idw interpolation for Axis 1
-gsidw <- gstat(formula=pca~1, locations=~X+Y, data=data)
-aidw <- terra::interpolate(object=pust, model=gsidw, xyNames=c("X", "Y"))
-aidwmsk <- mask(aidw,filter(pus, Diplodus_sargus==1))
-plot(aidwmsk,1, main="Inverse distance weighting interpolation")
-values(aidwmsk) %>% as.vector %>% unique %>% length
-
-## NOTA: RIFARE  LE DUE MAPPE PRECEDENTI SALVANDOLE PER RISPOSTA AI REVIEWERS
-## COMMENTARE IL CODICE SOTTO PER MULLUS
 
 
 ####################
@@ -159,17 +159,17 @@ mape_nn %>% as_tibble %>% mutate(method="NN") %>%
     ggtitle("Spatial interpolation, Mullus surmuletus")
 dev.off()
 
-#
-data <- data.frame(pca=pca$li[,1], X=coord_Albers[,1], Y=coord_Albers[,2])
-gsnn <- gstat(formula=pca~1, locations=~X+Y, data=data, nmax=5, set=list(idp=0))
-ann <- terra::interpolate(object=pust, model=gsnn, xyNames=c("X", "Y"))
-annmsk <- mask(ann,filter(pus, Mullus_surmuletus==1))
-plot(annmsk,1,main="Nearest neighbor interpolation")
-values(annmsk) %>% as.vector %>% unique %>% length
-
-gsidw <- gstat(formula=pca~1, locations=~X+Y, data=data)
-aidw <- terra::interpolate(object=pust, model=gsidw, xyNames=c("X", "Y"))
-aidwmsk <- mask(aidw,filter(pus, Mullus_surmuletus==1))
-plot(aidwmsk,1, main="Inverse distance weighting interpolation")
-values(aidwmsk) %>% as.vector %>% unique %>% length
+# #
+# data <- data.frame(pca=pca$li[,1], X=coord_Albers[,1], Y=coord_Albers[,2])
+# gsnn <- gstat(formula=pca~1, locations=~X+Y, data=data, nmax=5, set=list(idp=0))
+# ann <- terra::interpolate(object=pust, model=gsnn, xyNames=c("X", "Y"))
+# annmsk <- mask(ann,filter(pus, Mullus_surmuletus==1))
+# plot(annmsk,1,main="Nearest neighbor interpolation")
+# values(annmsk) %>% as.vector %>% unique %>% length
+# 
+# gsidw <- gstat(formula=pca~1, locations=~X+Y, data=data)
+# aidw <- terra::interpolate(object=pust, model=gsidw, xyNames=c("X", "Y"))
+# aidwmsk <- mask(aidw,filter(pus, Mullus_surmuletus==1))
+# plot(aidwmsk,1, main="Inverse distance weighting interpolation")
+# values(aidwmsk) %>% as.vector %>% unique %>% length
 
