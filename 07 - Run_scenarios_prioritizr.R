@@ -32,7 +32,7 @@ rm(g_rast)
 
 
 ################################################################################
-# Using single PCA axes as conservation features
+# Unidimensional discrete conservation features
 ################################################################################
 
 v.class_method <- c("quantile","equal","natural","stddev")
@@ -192,7 +192,7 @@ pus_for_clustering %>%
 
 
 ################################################################################
-# Combining PCA axes to define conservation features
+# Multidimensional discrete genetic clusters
 ################################################################################
 prob_multi <- res_multi <- list()
 i.num_classes <- 1
@@ -251,7 +251,7 @@ for (i.num_classes in 1 : 3){
     res_multi[[i.num_classes]] <- solve(prob_multi[[i.num_classes]], run_checks=F)
 }
 
-# Compose single-axes and multi-axes problems and results into single objects
+# Compose unidimensional and multidimensional problems and results into single objects
 problems_prioritizr <- c(prob_single,prob_multi)
 results_prioritizr <- c(res_single,res_multi)
 names(problems_prioritizr) <- names(results_prioritizr) <- 
