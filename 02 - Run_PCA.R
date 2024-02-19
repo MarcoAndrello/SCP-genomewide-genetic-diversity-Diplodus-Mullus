@@ -151,3 +151,21 @@ names(pca_interp) <- paste("Axis",c(1:26))
 pca_rast <- rast(pca_interp)
 writeRaster(pca_rast, file="Results/Mullus_allAxes_2753.grd")
 
+
+############################################################
+# Plot pca scores against latitude, longitude
+############################################################
+rm(list=ls())
+par(mfrow=c(2,2))
+load("Results/Diplodus_coord.RData")
+load("Results/Diplodus_pca_pop.RData")
+plot(Diplodus_coord[,1], pca$li[,1], xlab="Longitude", ylab="PCA score (First axis)", pch=16, col="gray", main="D. sargus")
+plot(Diplodus_coord[,2], pca$li[,1], xlab="Latitude", ylab="PCA score (First axis)", pch=16, col="gray", main="D. sargus")
+cor.test(Diplodus_coord[,1], pca$li[,1])
+cor.test(Diplodus_coord[,2], pca$li[,1])
+load("Results/Mullus_coord.RData")
+load("Results/Mullus_pca_pop.RData")
+plot(Mullus_coord[,1], pca$li[,1], xlab="Longitude", ylab="PCA score (First axis)", pch=16, col="gray", main="M. surmuletus")
+plot(Mullus_coord[,2], pca$li[,1], xlab="Latitude", ylab="PCA score (First axis)", pch=16, col="gray", main="M. surmuletus")
+cor.test(Mullus_coord[,1], pca$li[,1])
+cor.test(Mullus_coord[,2], pca$li[,1])
