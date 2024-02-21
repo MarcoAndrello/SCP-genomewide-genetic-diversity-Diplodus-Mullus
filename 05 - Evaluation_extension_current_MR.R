@@ -131,7 +131,7 @@ selections <- which(prob_gs@data@pu$status==2)
 prob_gs_current_MR <- update(prob_gs, b = selections)
 # Space held
 space.held(prob_gs_current_MR, y=NULL)
-# AMount held
+# Amount held
 amount.held(prob_gs_current_MR, y=NULL)
 # Total conservation cost
 pus %>%
@@ -139,22 +139,32 @@ pus %>%
     filter(status == 2) %>%
     pull(cost) %>%
     sum
+
 # Space plot
+## Add a column "selected" to pus to include the existing marine reserves ("selections")
 pus %>% mutate(selected = 0) -> pus_with_selections
 pus_with_selections$selected[selections] <- 1
+png("Figures/space-plots.png",width=20,height=10,units="cm",res=300)
+par(mfrow=c(1,2))
 # Diplodus
+## Coordinates of demand points of the first two PCA axes
 prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[1]]@demand.points@coords[,c(1,2)] %>%
-    plot(pch=16, col="gray", main="Genetic space, Diplodus sargus")
-selections_species <- which(filter(pus_with_selections,Diplodus_sargus == 1)$selected == 1) 
+    plot(pch=16, col="gray", main="Diplodus sargus",cex=0.5)
+## Subset the planning units that are (i) existing marine reserves AND (ii) occupied by the species
+selections_species <- which(filter(pus_with_selections,Diplodus_sargus == 1)$selected == 1)
+## Plot them in green
 prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[1]]@planning.unit.points@coords[selections_species,c(1,2)] %>%
-    points(pch=16, col="green")
+    points(pch=16, col="green",cex=0.5)
 # Mullus
+## Coordinates of demand points of the first two PCA axes
 prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[2]]@demand.points@coords[,c(1,2)] %>%
-    plot(pch=16, col="gray", main="Genetic space, Mullus surmuletus")
-selections_species <- which(filter(pus_with_selections,Mullus_surmuletus == 1)$selected == 1) 
+    plot(pch=16, col="gray", main="Mullus surmuletus",cex=0.5)
+## Subset the planning units that are (i) existing marine reserves AND (ii) occupied by the species
+selections_species <- which(filter(pus_with_selections,Mullus_surmuletus == 1)$selected == 1)
+## Plot them in green
 prob_gs_current_MR@data@attribute.spaces[[1]]@spaces[[2]]@planning.unit.points@coords[selections_species,c(1,2)] %>%
-    points(pch=16, col="green")
-
+    points(pch=16, col="green",cex=0.5)
+dev.off()
 
 
 ################################################################################
