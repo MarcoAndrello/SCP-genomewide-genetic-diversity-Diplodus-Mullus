@@ -194,7 +194,8 @@ ggplot(space_held_longer) +
     geom_boxplot(aes(x=solution, y=space_held, fill=species, colour=species)) +
     theme(axis.text.x = element_text(angle = 90, hjust=1, vjust=0.5)) +
     ylim(0.85,1) +
-    geom_hline(yintercept=0.95, linetype = "dotted")
+    geom_hline(yintercept=0.95, linetype = "dotted") +
+    ylab("Proportion of genetic space held")
 dev.off()
 
 
