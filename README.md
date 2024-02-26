@@ -2,7 +2,11 @@ Genetic-SCP-Diplodus-Mullus
 
 # Evaluating different approaches to integrate genome-wide genetic diversity in spatial conservation prioritization
 
-This repository contains code to perform all the analyses presented in the manuscript. The analysis is subdivided in the following steps, each corresponding to a code file and detailed below, to be executed in this order:
+This repository contains code to perform all the analyses presented in the manuscript:
+
+XXXX. Evaluating different approaches to integrate genome-wide genetic diversity in spatial conservation prioritization. Submitted to Biological Conservation.
+
+The analysis is subdivided in the following steps, each corresponding to a code file and detailed below, to be executed in this order:
 
 ### 01 - Create_pus.R
 
