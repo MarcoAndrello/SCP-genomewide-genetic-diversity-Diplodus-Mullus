@@ -65,6 +65,10 @@ clusternum$Best.nc[1,] %>% table %>% sort(decreasing=T) %>% names %>% as.numeric
 save(hopkins, clusternum, file="Results/Clustering_Mullus.RData")
 write.csv(clusternum$All.index,file="Results/Clustering_Mullus_allIndex.csv")
 t(clusternum$Best.nc) -> clustering_Mullus_Best.nc
+
+# Table S2: List of the 26 clustering indices evaluated by the NbClust function
+# to find the most likely number of multidimensional genetic clusters of the
+# two species, with the most likely number of clusters and the value of the index.
 cbind(clustering_Diplodus_Best.nc, clustering_Mullus_Best.nc) %>%
     write.csv(file="Results/Clustering_BestNc.csv")
 

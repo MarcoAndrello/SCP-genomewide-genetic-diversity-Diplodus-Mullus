@@ -170,6 +170,8 @@ pus_for_clustering_Mullus %>% mutate(Mullus_k2 = factor(pam.res[[2]][[1]]$cluste
     select(ID, Mullus_k2, Mullus_k3, Mullus_k5) %>%
     ## Join the clustering of the 3613 Mullus PUs to the 5203 PUs
     left_join(x=pus_for_clustering, y=., by="ID") -> pus_for_clustering
+
+## (Figure S3 and S4)
 ## Plot cluster maps
 for (i.clust in 1 : 3) {
     k <- c(2,3,5)[i.clust]

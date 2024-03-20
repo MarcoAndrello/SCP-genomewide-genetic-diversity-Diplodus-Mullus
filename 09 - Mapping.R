@@ -72,7 +72,7 @@ dev.off()
 
 
 ################################################################################
-# Figure S6 and S7
+# Figure S7 and S8
 # Spatially interpolated PCA scores for D. sargus and M. surmuletus
 ################################################################################
 
@@ -121,7 +121,7 @@ dev.off()
 
 
 ################################################################################
-# Figure S8
+# Figure S9
 # Map of priority sites for protecting 15% of species ranges without explicit genetic objectives. 
 ################################################################################
 load("Results/Results_Extension_Amount.RData")

@@ -101,6 +101,7 @@ pus %>% mutate(status_0.5 = 0) -> pus
 pus$status_0.5[which(pus$perc_prot>0.5)] <- 1
 
 # Number of protected PUs and area protected by those, according to different thresholds
+# (Table S1)
 pus %>% filter(status_0==1) %>% pull(area_prot) %>% length
 pus %>% filter(status_0.01==1) %>% pull(area_prot) %>% length
 pus %>% filter(status_0.1==1) %>% pull(area_prot) %>% length

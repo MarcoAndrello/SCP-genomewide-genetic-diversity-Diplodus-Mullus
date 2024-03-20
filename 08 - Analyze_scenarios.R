@@ -96,6 +96,7 @@ for (i.res in 1 : (nrow(jaccard_distance)-1)) {
 jaccard_distance %>% as.vector %>% summary
 save(jaccard_distance, pvalue, file="Results/Jaccard_distance.RData")
 
+# (Figure 2)
 # Plot a tree showing distances between solutions
 load(paste0(getwd(),"/Results/Jaccard_distance.RData"))
 hc <- hclust(as.dist(t(jaccard_distance)))
@@ -184,6 +185,7 @@ load("Results/List_space_held.RData")
 space_held <- bind_rows(list_space_held)
 space_held$solution <- factor(space_held$solution, levels=unique(space_held$solution))
 
+# (Figure 3)
 # Plot
 space_held %>% rename(Diplodus = space_held_Diplodus, Mullus = space_held_Mullus) %>% 
     pivot_longer(cols=c(Diplodus, Mullus)) %>%
@@ -251,6 +253,7 @@ save(cost,file="Results/Cost.RData")
 
 cost %>% group_by(solution) %>% summarise(mean_cost=mean(cost)) %>% arrange(mean_cost)
 
+# (Figure 4)
 # Plot
 theme_set(theme_classic())
 png(paste0("Figures/Cost.png"),width=15,height=10,units="cm",res=300)
@@ -299,7 +302,7 @@ load("Planning_units.RData")
 ne_countries(scale = 50, returnclass = "sf") %>% st_transform(st_crs(pus)) -> countries
 
 # Loop on planning problems to plot one map per problem
-for (i.res in 14 : 15) {
+for (i.res in 1 : 15) {
     cat(i.res,"\n"); flush.console()
     if (i.res < 14) {
         selections <- results_prioritizr[[i.res]] %>%
@@ -312,6 +315,7 @@ for (i.res in 14 : 15) {
                                                res_50gs[[i]]@results@selections)
         selections <- t(selections)
         main.title <- "raptr_50perc"
+        # The raptr_50gs is the best method, so saving the selection for subsequent plot at high resolution
         selections -> best_selections
     }
     if(i.res == 15) {
@@ -319,11 +323,6 @@ for (i.res in 14 : 15) {
         for (i in 2 : 20) selections <- rbind(selections,
                                               res_20gs[[i]]@results@selections)
         selections <- t(selections)
-        # selections <- rbind(results_raptr[[6]]@results@selections,
-        #                     results_raptr[[7]]@results@selections,
-        #                     results_raptr[[8]]@results@selections,
-        #                     results_raptr[[9]]@results@selections,
-        #                     results_raptr[[10]]@results@selections) %>% t()
         main.title <- "raptr_20perc"
     }
     selection_frequency <- rowSums(selections) / ncol(selections)
@@ -343,6 +342,7 @@ for (i.res in 14 : 15) {
                                              "Existing")
         ) -> pus_map
     
+    # (Figure S10), to be composed in power point from the individual maps
     png(paste0("Figures/Maps_selections/Map_selection_frequency_prob",i.res,".png"),
         width=20,height=8,res=600,units="cm")
     print(
@@ -355,6 +355,7 @@ for (i.res in 14 : 15) {
     )
     dev.off()
     
+    # (Figure 5)
     # Plot map of the best solutions (that of raptr_50)
     if (i.res == 14) {
         png("Figures/Map_selection_frequency.png",

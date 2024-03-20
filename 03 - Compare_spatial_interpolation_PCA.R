@@ -66,6 +66,7 @@ for (i.axis in 1 : 17){ #ncol(pca$li)){
     }
 }
 
+# (Figure S11)
 # Plot boxplots showing the distribution of MAPE over the 5 folds, for each Axis and for the two methods (for Diplodus)
 theme_set(theme_classic())
 colnames(mape_nn) <- colnames(mape_idw) <- c(1:5) 
@@ -145,6 +146,7 @@ for (i.axis in 1 : 26){
 mape_nn %>% rowMeans %>% barplot(xlab="PCA axis",names.arg=c(1:26), main="MAPE Nearest neighbor",ylim=c(0,15000))
 mape_idw %>% rowMeans %>% barplot(xlab="PCA axis",names.arg=c(1:26), main="MAPE inverse distance weighing",ylim=c(0,15000))
 
+# (Figure S11)
 # Plot boxplots showing the distribution of MAPE over the 5 folds, for each Axis and for the two methods (for Mullus)
 colnames(mape_nn) <- colnames(mape_idw) <- c(1:5) 
 png("Figures/Spatial_interpolation_Mullus.png",width=20,height=10,res=300,units="cm")
