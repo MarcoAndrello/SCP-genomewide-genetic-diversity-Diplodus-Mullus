@@ -56,6 +56,7 @@ save(pca,file="Results/Diplodus_pca_pop.RData")
 
 # Plot PCA (biplot and screeplot)
 load("Results/Diplodus_pca_pop.RData")
+# (Figure S5)
 png("Figures/PCA_biplot_Diplodus.png",width=15,height=15,units="cm",res=300)
 plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Diplodus sargus")
 dev.off()
@@ -115,6 +116,7 @@ pca <- dudi.pca(xpop)
 save(pca,file="Results/Mullus_pca_pop.RData")
 # Plot PCA (biplot and screeplot)
 load("Results/Mullus_pca_pop.RData")
+# (Figure S5)
 png("Figures/PCA_biplot_Mullus.png",width=15,height=15,units="cm",res=300)    
 plot(pca$li[,1],pca$li[,2],pch=16,xlab="Axis 1",ylab="Axis 2",col="gray", main = "PCA Mullus surmuletus")
 dev.off()
@@ -153,7 +155,7 @@ writeRaster(pca_rast, file="Results/Mullus_allAxes_2753.grd")
 
 
 ############################################################
-# Plot pca scores against latitude, longitude
+# Plot pca scores against latitude, longitude (Figure S6)
 ############################################################
 rm(list=ls())
 png("Figures/pca-geography.png",width=20,height=20,units="cm",res=300)
