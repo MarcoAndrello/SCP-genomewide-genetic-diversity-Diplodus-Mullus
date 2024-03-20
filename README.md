@@ -22,7 +22,7 @@ For each axis of the PCA, it interpolates the scores of the sampled sites on a r
 
 ### 03 - Compare_spatial_interpolation_PCA.R
 
-This script compares two spatial interpolation models for PCA scores: (i) nearest-neighbor interpolation and (ii) inverse distance weighting interpolation using k-fold cross validation (Figure S9).
+This script compares two spatial interpolation models for PCA scores: (i) nearest-neighbor interpolation and (ii) inverse distance weighting interpolation using k-fold cross validation (Figure S11).
 
 ### 04 - Find_number_clusters.R
 
