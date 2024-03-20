@@ -17,7 +17,7 @@ It imports the conservation costs of Mazor et al (2014).
 
 ### 02 - Run_PCA.R
 
-This script performs the principal component analysis (PCA) on the genomic datasets of Boulanger et al (2022): 8068 SNPs for D. sargus and 2753 SNPs for M. surmuletus; and plots the first two axes of the PCA (Figure S5).
+This script performs the principal component analysis (PCA) on the genomic datasets of Boulanger et al (2022): 8068 SNPs for D. sargus and 2753 SNPs for M. surmuletus; and plots the first two axes of the PCA (Figure S5 and S6).
 For each axis of the PCA, it interpolates the scores of the sampled sites on a raster spanning the study region using inverse distance weighting interpolation.
 
 ### 03 - Compare_spatial_interpolation_PCA.R
@@ -28,7 +28,7 @@ This script compares two spatial interpolation models for PCA scores: (i) neares
 
 This scripts finds the optimal number of clusters for the multidimensional discrete genetic cluster approach, by applying several clustering indices to the data (Table S2).
 
-### 05 - Evaluation_extension_current_Mr.R
+### 05 - Evaluation_extension_current_MR.R
 
 This script defines a raptr problem with one multidimensional genetic space for each of the two species using one demand point for each planning unit where the species is present.
 It evaluates the amount and space held by the current set of marine reserves.
@@ -48,7 +48,7 @@ This script defines the planning problems for prioritizr and solves them. It con
 
 1) Definition and solution of problems using unidimensional discrete conservation features: these problems consider 4 classification methods (quantile interval, equal interval, natural breaks and standard deviation) and 3 numbers of classes (only 1 for the standard deviation).
 
-2) Partitioning around medoids: applies this multivariate clustering method to find clusters in the Multidimensional discrete genetic cluster approach 
+2) Partitioning around medoids: applies this multivariate clustering method to find clusters in the Multidimensional discrete genetic cluster approach; plots the maps of clusters (Figure S3 and S4)
 
 3) Definition and solution of problems using multidimensional discrete genetic clusters: these problems consider 3 numbers of clusters (low, medium and high). 
 
@@ -56,16 +56,16 @@ This script defines the planning problems for prioritizr and solves them. It con
 
 This script analyses the results of the prioritization problems. It calculates:
 
- - Jaccard distances between solutions and their statistical significance through a permutation approach;
+ - Jaccard distances between solutions and their statistical significance through a permutation approach (Figure 2);
  
- - genetic space held (relative to the genetic spaces and demand points of the "gold standard" approach) for across all problems and solutions;
+ - genetic space held (relative to the genetic spaces and demand points of the "gold standard" approach) for across all problems and solutions (Figure 3);
  
- - total conservation cost.
+ - total conservation cost (Figure 4).
  
  - Maps of selection frequency for each problem (Figure S10) and for the approximate problem with the best performances, i.e. raptr_50gs (Figure 5)
 
 
-### 09 - Mapping
+### 09 - Mapping.R
 
 This script contains assorted codes to plot some of the maps shown in the paper, i.e.:
 
@@ -73,9 +73,9 @@ This script contains assorted codes to plot some of the maps shown in the paper,
  
  - Figure S2: map of sampling points
  
- - Figure S6 and S7: spatially interpolated PCA scores for D. sargus and M. surmuletus
+ - Figure S7 and S8: spatially interpolated PCA scores for D. sargus and M. surmuletus
  
- - Figure S8: map of priority sites for protecting 15% of species ranges without explicit genetic objectives. 
+ - Figure S9: map of priority sites for protecting 15% of species ranges without explicit genetic objectives. 
 
 <br/><br/>
 
@@ -97,3 +97,45 @@ In the /function folder, there is a single file containing one helper function:
 
 ### split.taxon.R
 It contains the function split.taxon, used to split a layer into distinct conservation features using single PCA axes using different methods and number of features.
+
+<br/><br/>
+
+## Figures
+Synthetic list of the figures and tables appearing in the main text and in the Supplementary material and the code used to generate them:
+
+ 
+ - Table S1: 01 - Create_pus.R
+
+ - Table S2: 04 - Find_number_clusters.R
+ 
+ - Figure 1: This figure was generated using PowerPoint and no R code is needed.
+ 
+ - Figure 2: 08 - Analyze_scenarios.R
+ 
+ - Figure 3: 08 - Analyze_scenarios.R
+ 
+ - Figure 4: 08 - Analyze_scenarios.R
+  
+ - Figure 5: 08 - Analyze_scenarios.R
+ 
+ - Figure S1: 09 - Mapping.R
+ 
+ - Figure S2: 09 - Mapping.R
+ 
+ - Figure S3: 07 - Run_scenarios_prioritizr.R
+   
+ - Figure S4: 07 - Run_scenarios_prioritizr.R
+ 
+ - Figure S5: 02 - Run_PCA.R
+ 
+ - Figure S6: 02 - Run_PCA.R
+   
+ - Figure S7: 09 - Mapping.R
+ 
+ - Figure S8: 09 - Mapping.R
+ 
+ - Figure S9: 09 - Mapping.R
+   
+ - Figure S10: 08 - Analyze_scenarios.R
+ 
+ - Figure S11: 03 - Compare_spatial_interpolation_PCA.R
