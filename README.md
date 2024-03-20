@@ -4,7 +4,7 @@ Genetic-SCP-Diplodus-Mullus
 
 This repository contains code to perform all the analyses presented in the manuscript:
 
-XXXX. Evaluating different approaches to integrate genome-wide genetic diversity in spatial conservation prioritization. Submitted to Biological Conservation.
+Andrello M. and Manel S. 2024. Evaluating different approaches to integrate genome-wide genetic diversity in spatial conservation prioritization. Biological Conservation, accepted for publication.
 
 The analysis is subdivided in the following steps, each corresponding to a code file and detailed below, to be executed in this order:
 
@@ -100,7 +100,7 @@ It contains the function split.taxon, used to split a layer into distinct conser
 
 <br/><br/>
 
-## Figures
+## Tables and figures
 Synthetic list of the figures and tables appearing in the main text and in the Supplementary material and the code used to generate them:
 
  
